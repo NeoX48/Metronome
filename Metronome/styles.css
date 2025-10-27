@@ -1,0 +1,1241 @@
+/**
+ * 简单节拍器 - 样式表
+ * @author Your Name
+ * @version 2.0.0
+ */
+
+/* ==================== 全局样式 ==================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* 主题色 */
+    --primary-color: #4CAF50;
+    --primary-dark: #45a049;
+    --secondary-color: #2196F3;
+    --accent-color: #FF9800;
+    --danger-color: #f44336;
+    
+    /* 背景色 */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #3d3d3d;
+    
+    /* 文字色 */
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-muted: #808080;
+    
+    /* 边框色 */
+    --border-color: #444;
+    --border-light: #555;
+    
+    /* 阴影 */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+    
+    /* 圆角 */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-full: 50%;
+    
+    /* 过渡 */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* 间距 */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-md);
+    overflow-x: hidden;
+}
+
+/* ==================== 容器 ==================== */
+
+.container {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-lg);
+    max-width: 600px;
+    width: 100%;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==================== 标题 ==================== */
+
+h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: var(--spacing-sm);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xl);
+    font-size: 0.95rem;
+}
+
+/* ==================== BPM显示区域 ==================== */
+
+.bpm-display {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    position: relative;
+}
+
+.denominator-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+.bpm-value {
+    font-size: 4rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    min-width: 150px;
+    text-align: center;
+    transition: var(--transition-normal);
+}
+
+.bpm-value.changing {
+    color: var(--accent-color);
+    transform: scale(1.1);
+}
+
+.bpm-label {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* ==================== 待定BPM提示 ==================== */
+
+.pending-bpm-hint {
+    text-align: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 152, 0, 0.2);
+    border: 1px solid var(--accent-color);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-md);
+    color: var(--accent-color);
+    font-size: 0.9rem;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#pending-bpm-value {
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+/* ==================== 控制面板 ==================== */
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.control-group label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* ==================== BPM控制 ==================== */
+
+.bpm-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+      align-items: center;
+      padding: 10px 0;
+  }
+  
+  .beat-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px; /* 控制垂直方向的间距 */
+  }
+
+.bpm-control-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--primary-color);
+    background: var(--bg-tertiary);
+    color: var(--primary-color);
+    border-radius: var(--radius-sm);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bpm-control-btn:hover {
+    background: var(--primary-color);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.bpm-control-btn:active {
+    transform: scale(0.95);
+}
+
+/* ==================== 滑块 ==================== */
+
+input[type="range"] {
+    width: 100%;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    background: var(--primary-color);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-fast);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: var(--primary-dark);
+    transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    background: var(--primary-color);
+    cursor: pointer;
+    border: none;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-fast);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    background: var(--primary-dark);
+    transform: scale(1.2);
+}
+
+.bpm-range-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: var(--spacing-xs);
+}
+
+/* ==================== 选择框 ==================== */
+
+select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    outline: none;
+}
+
+select:hover {
+    border-color: var(--primary-color);
+}
+
+select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* ==================== 帮助图标 ==================== */
+
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: help;
+    margin-left: var(--spacing-sm);
+    transition: var(--transition-fast);
+}
+
+.help-icon:hover {
+    background: var(--primary-color);
+    color: var(--text-primary);
+}
+
+/* ==================== 倍频关系提示 ==================== */
+
+.relation-hint {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(33, 150, 243, 0.2);
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--radius-sm);
+    color: var(--secondary-color);
+    font-size: 0.85rem;
+    text-align: center;
+    animation: slideDown 0.3s ease;
+}
+
+/* ==================== 音量显示 ==================== */
+
+.volume-value {
+    display: inline-block;
+    min-width: 40px;
+    text-align: right;
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+/* ==================== 拍号设置 ==================== */
+
+.time-signature-separator {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-secondary);
+    margin: 0 var(--spacing-sm);
+}
+
+#beat-numerator,
+#beat-denominator {
+    width: 80px;
+}
+
+/* ==================== 小节指示灯 ==================== */
+
+.bar-led {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-led::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    transition: width linear;
+}
+
+.bar-led.active::before {
+    animation: barProgress 4s linear;
+}
+
+@keyframes barProgress {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+/* ==================== 节拍指示器 ==================== */
+
+.beat-indicator {
+    padding: var(--spacing-md) 0;
+}
+
+.indicator-dots {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-md);
+      align-items: center;
+      padding: 10px 0;
+      padding-left: 5px; /* 确保最左侧有最小5px间距 */
+      padding-right: 5px; /* 确保最右侧有最小5px间距 */
+      overflow-x: hidden;
+      width: 100%;
+      flex-wrap: nowrap;
+      box-sizing: border-box;
+  }
+
+.beat-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: var(--radius-full);
+      border: 2px solid var(--border-color);
+      box-sizing: border-box;
+  }
+  
+  /* 可静音节拍点的样式 */
+  .beat-dot.muteable {
+      cursor: pointer;
+      transition: all 0.2s ease;
+  }
+  
+  .beat-dot.muteable:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* 静音状态的样式 */
+  .beat-dot.muted {
+      background-color: #ccc;
+      opacity: 0.6;
+      position: relative;
+  }
+  
+  .beat-dot.muted::after {
+      content: '';
+      position: absolute;
+
+/* 静音节拍闪烁动画 */
+@keyframes muteFlash {
+    0% { background-color: #ccc; opacity: 0.6; }
+    50% { background-color: #ff6b6b; opacity: 0.9; }
+    100% { background-color: #ccc; opacity: 0.6; }
+}
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #888;
+      transform: translateY(-50%) rotate(-45deg);
+  }
+  
+  /* 为不同行的节拍点添加细微的视觉差异 */
+  .beat-dot.row-1 {
+      opacity: 1;
+      background: var(--bg-tertiary);
+  }
+  
+  .beat-dot.row-2 {
+      opacity: 0.9;
+      background: var(--bg-tertiary);
+  }
+  
+  .beat-dot.row-3 {
+      opacity: 0.8;
+      background: var(--bg-tertiary);
+  }
+  
+  .beat-dot.row-4 {
+      opacity: 0.7;
+      background: var(--bg-tertiary);
+  }
+  
+  /* 添加自适应逻辑 */
+  @media (max-width: 768px) {
+      .indicator-dots {
+          gap: calc(var(--spacing-md) / 2);
+      }
+  }
+  
+  @media (max-width: 480px) {
+      .indicator-dots {
+          gap: 4px;
+      }
+      
+      .beat-dot {
+          width: 16px !important;
+          height: 16px !important;
+      }
+  }
+  
+  @media (max-width: 320px) {
+      .indicator-dots {
+          gap: 2px;
+      }
+      
+      .beat-dot {
+          width: 12px !important;
+          height: 12px !important;
+      }
+  }
+  
+  .beat-dot.first {
+      background: var(--bg-tertiary);
+      border: 2px solid var(--border-color);
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+.beat-dot.first {
+    border-color: var(--primary-color);
+}
+
+.beat-dot.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px var(--primary-color);
+    animation: beatPulse 0.2s ease;
+}
+
+@keyframes beatPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.5);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ==================== 按钮 ==================== */
+
+.button-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.btn {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: var(--text-primary);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary.stop {
+    background: var(--danger-color);
+}
+
+.btn-primary.stop:hover {
+    background: #d32f2f;
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.btn-accent {
+    background: var(--accent-color);
+    color: var(--text-primary);
+}
+
+.btn-accent:hover {
+    background: #f57c00;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: var(--text-primary);
+}
+
+.btn-danger:hover {
+    background: #d32f2f;
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ==================== 快捷键提示 ==================== */
+
+.keyboard-hints {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-color);
+}
+
+.keyboard-hints p {
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-secondary);
+    font-weight: bold;
+}
+
+.keyboard-hints ul {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.keyboard-hints li {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+kbd {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    box-shadow: 0 2px 0 var(--border-color);
+}
+
+/* ==================== 倒计时覆盖层 ==================== */
+
+.countdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.countdown-overlay.active {
+    display: flex;
+}
+
+.countdown-number {
+    font-size: 10rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    text-shadow: 0 0 40px var(--primary-color);
+    animation: countdownPulse 1s ease;
+}
+
+@keyframes countdownPulse {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ==================== 模态窗口 ==================== */
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-md);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    line-height: 1;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+}
+
+.close-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--danger-color);
+}
+
+/* ==================== 训练模式标签页 ==================== */
+
+.training-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 var(--spacing-lg);
+}
+
+.tab-btn {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    position: relative;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* ==================== 训练面板 ==================== */
+
+.training-panel {
+    display: none;
+    padding: var(--spacing-lg);
+}
+
+.training-panel.active {
+    display: block;
+}
+
+.training-panel h3 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+}
+
+.panel-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-lg);
+    font-size: 0.9rem;
+}
+
+/* ==================== 训练表单 ==================== */
+
+.training-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.form-group label {
+    min-width: 120px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.form-group input[type="number"] {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    outline: none;
+    transition: var(--transition-fast);
+}
+
+.form-group input[type="number"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.form-group .unit {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.form-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* ==================== 训练进度 ==================== */
+
+.training-progress {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.progress-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.progress-info p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.progress-info strong {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 12px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    transition: width 0.3s ease;
+    border-radius: var(--radius-full);
+}
+
+/* ==================== 节奏型列表 ==================== */
+
+.pattern-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.pattern-item {
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    text-align: left;
+}
+
+.pattern-item:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-primary);
+    transform: translateY(-2px);
+}
+
+.pattern-name {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.pattern-notation {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-family: monospace;
+    letter-spacing: 4px;
+}
+
+/* ==================== 组件查看器 ==================== */
+
+.inspector-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-full);
+    background: var(--primary-color);
+    color: var(--text-primary);
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition-fast);
+    z-index: 999;
+}
+
+.inspector-toggle:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.component-inspector {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 350px;
+    max-height: 500px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    display: none;
+    flex-direction: column;
+    z-index: 998;
+    animation: slideUp 0.3s ease;
+}
+
+.component-inspector.active {
+    display: flex;
+}
+
+.inspector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.inspector-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.inspector-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inspector-close-btn:hover {
+    color: var(--danger-color);
+}
+
+.components-container {
+    padding: var(--spacing-md);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.component-item {
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.component-item strong {
+    color: var(--primary-color);
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 768px) {
+    .container {
+        padding: var(--spacing-lg);
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .bpm-value {
+        font-size: 3rem;
+    }
+    
+    .button-group {
+        grid-template-columns: 1fr;
+    }
+    
+    .keyboard-hints ul {
+        grid-template-columns: 1fr;
+    }
+    
+    .pattern-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .component-inspector {
+        width: calc(100% - 40px);
+        right: 20px;
+        left: 20px;
+    }
+    
+    .countdown-number {
+        font-size: 6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: var(--spacing-sm);
+    }
+    
+    .container {
+        padding: var(--spacing-md);
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .bpm-value {
+        font-size: 2.5rem;
+    }
+    
+    .denominator-icon {
+        font-size: 2rem;
+    }
+    
+    .btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 0.9rem;
+    }
+}
+
+/* ==================== 打印样式 ==================== */
+
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .inspector-toggle,
+    .component-inspector,
+    .modal,
+    .countdown-overlay {
+        display: none !important;
+    }
+}
+
+/* ==================== 无障碍支持 ==================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==================== 自定义滚动条 ==================== */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+}
+
+/* ==================== 选中文本样式 ==================== */
+
+::selection {
+    background: var(--primary-color);
+    color: var(--text-primary);
+}
+
+::-moz-selection {
+    background: var(--primary-color);
+    color: var(--text-primary);
+}

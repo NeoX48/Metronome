@@ -1,0 +1,4667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>简单节拍器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        /* 全屏倒数样式 */
+        .countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            display: none;
+        }
+        
+        .countdown-number {
+            font-size: 20vw;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        /* 训练控制包装器样式 */
+        .training-controls-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        
+        .countdown-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .countdown-control select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #334f53;
+            margin: 0;
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        /* 基础触摸友好设置 */
+        * {
+            touch-action: manipulation; /* 防止双击缩放 */
+            -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: clamp(8px, 2vw, 12px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: clamp(20px, 6vw, 40px);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            margin: 20px auto;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .bpm-display {
+            margin: 20px 0;
+            padding: clamp(20px, 5vw, 30px);
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .denominator-icon {
+            font-size: clamp(36px, 10vw, 48px);
+            color: #3498db;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        #bpm-value {
+            font-size: clamp(48px, 15vw, 64px);
+            font-weight: bold;
+            color: #3498db;
+            font-family: 'Courier New', monospace;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .bpm-label {
+            font-size: clamp(18px, 5vw, 24px);
+            color: #666;
+            margin-left: 10px;
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: clamp(20px, 5vw, 25px);
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider-with-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .bpm-buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: clamp(80px, 20vw, 150px);
+            margin-bottom: 5px;
+        }
+        
+        .bpm-controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(10px, 3vw, 15px);
+            margin-bottom: 10px;
+        }
+        
+        .bpm-controls-row label {
+            margin: 0;
+            font-weight: bold;
+        }
+        
+        button.bpm-control-btn {
+            min-width: 40px;
+            min-height: 40px;
+            width: clamp(30px, 6vw, 40px) !important;
+            height: clamp(30px, 6vw, 40px) !important;
+            border: none;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            font-size: clamp(16px, 3vw, 18px) !important;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            transition: background-color 0.3s;
+        }
+        
+        .bpm-control-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .bpm-control-btn:active {
+            background-color: #1f6dad;
+            transform: scale(0.95);
+        }
+        
+        .slider-with-controls input[type="range"] {
+            width: 100%;
+            height: 6px;
+        }
+        
+        .volume-value {
+            background-color: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+            margin: 0 5px;
+        }
+        
+        .volume-unit {
+            font-size: 0.9em;
+            color: #555;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: clamp(10px, 4vw, 20px);
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        #beat-numerator, #beat-denominator {
+            width: 60px;
+            padding: 5px;
+            margin: 0 5px;
+            border: 2px solid #4a90e2;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        #beat-numerator:focus, #beat-denominator:focus {
+            border-color: #2196F3;
+        }
+        
+        .beat-indicator {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .indicator-dots {
+            display: flex;
+            justify-content: center;
+            gap: clamp(8px, 2vw, 10px);
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .beat-dot {
+            width: clamp(16px, 4vw, 20px);
+            height: clamp(16px, 4vw, 20px);
+            border-radius: 50%;
+            background-color: #ccc;
+            transition: all 0.2s ease;
+            border: 2px solid #666;
+        }
+        
+        .beat-dot.active {
+            background-color: #4a90e2;
+            transform: scale(1.2);
+        }
+        
+        .beat-dot.first {
+            border-color: #2196F3;
+            border-width: 2px;
+        }
+        
+        button {
+            padding: clamp(20px, 8vw, 30px);
+            min-width: 80px;
+            min-height: 80px;
+            width: clamp(80px, 20vw, 100px);
+            height: clamp(80px, 20vw, 100px);
+            font-size: clamp(16px, 4vw, 18px);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        
+        #toggle-btn.start {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        #tap-btn {
+            background-color: #9b59b6;
+            color: white;
+            margin: 0 clamp(5px, 2vw, 10px);
+            min-width: 90px;
+            min-height: 90px;
+            width: clamp(90px, 25vw, 120px);
+            height: clamp(90px, 25vw, 120px);
+            padding: 15px; /* 增加触摸区域 */
+        }
+        
+        #tap-btn:hover {
+            background-color: #8e44ad;
+        }
+        
+        #tap-btn:active {
+            background-color: #7d3c98;
+            transform: scale(0.95);
+            transition: all 0.1s;
+        }
+        
+        #toggle-btn.start:hover {
+            background-color: #229954;
+        }
+        
+        #toggle-btn.stop {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        #toggle-btn.stop:hover {
+            background-color: #c0392b;
+        }
+        
+        #reset-btn {
+            background-color: #9b59b6;
+            color: white;
+            margin-left: 20px;
+        }
+        
+        #reset-btn:hover {
+            background-color: #8e44ad;
+        }
+
+        #training-btn {
+            background-color: #e67e22;
+            color: white;
+            margin-left: 10px;
+        }
+
+        #training-btn:hover {
+            background-color: #d35400;
+        }
+
+        /* 模态窗口样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close-modal:hover {
+            color: #000;
+        }
+
+        .training-mode {
+            margin-bottom: 20px;
+        }
+
+        .training-mode h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .training-control-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .training-control-group label {
+            flex: 0 0 180px;
+            margin-bottom: 0;
+        }
+
+        .training-control-group input {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .training-control-group input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .toggle-training {
+            padding: 12px 24px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-training.start {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .toggle-training.start:hover {
+            background-color: #229954;
+        }
+
+        .toggle-training.stop {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .toggle-training:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .stop-training:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .training-status {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .training-status p {
+            margin: 5px 0;
+        }
+
+        .training-status #training-status-text {
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .search-container {
+            position: relative;
+            margin-top: 10px;
+        }
+        
+        #component-search {
+            width: 100%;
+            padding: 8px 30px 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+        
+        .search-results-count {
+            font-size: 12px;
+            color: #666;
+            margin: 5px 0 10px 0;
+            text-align: right;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-style: italic;
+        }
+        
+        mark {
+            background-color: #ffeb3b;
+            color: #000;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        #inspector-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        /* 组件查看器样式 */
+        .component-inspector {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            width: 450px;
+            height: 100vh;
+            background-color: #f5f5f5;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.15);
+            z-index: 999;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            padding: 20px;
+        }
+
+        .component-inspector.active {
+            right: 0;
+        }
+
+        .inspector-header {
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .inspector-header h2 {
+            color: #333;
+            margin: 0;
+        }
+
+        /* 搜索容器样式 */
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #component-search {
+            width: 100%;
+            padding: 8px 35px 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        #component-search:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            pointer-events: none;
+        }
+
+        /* 过滤器控件样式 */
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-controls select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-controls select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        /* 组件组样式 */
+        .component-group {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            background: white;
+        }
+
+        .group-header {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.2s ease;
+        }
+
+        .group-header:hover {
+            background-color: #e9ecef;
+        }
+
+        .group-header h3 {
+            color: #3498db;
+            margin: 0;
+            font-size: 16px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .group-header h3::before {
+            content: "📦";
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .toggle-icon {
+            font-size: 12px;
+            color: #666;
+            transition: transform 0.2s ease;
+        }
+
+        .group-content {
+            padding: 10px 15px;
+        }
+
+        /* 组件项样式 */
+        .component-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .component-item:hover {
+            background-color: #f9f9f9;
+            cursor: pointer;
+            border-color: #3498db;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .component-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .component-title {
+            font-weight: bold;
+            color: #2c3e50;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+            margin: 0;
+            flex: 1;
+        }
+
+        /* 状态指示器 */
+        .component-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #999;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+
+        .component-indicator[data-status="visible"] {
+            background-color: #27ae60;
+            animation: pulse 2s infinite;
+        }
+
+        .component-indicator[data-status="hidden"] {
+            background-color: #e74c3c;
+        }
+
+        .component-info {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .info-row {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-label {
+            flex: 0 0 120px;
+            color: #7f8c8d;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .info-value {
+            flex: 1;
+            color: #2c3e50;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 13px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 更新高亮效果 */
+        .info-value.updated {
+            background-color: rgba(52, 152, 219, 0.3);
+            animation: highlight 1s ease-out;
+        }
+
+        /* 时间戳行样式 */
+        .timestamp-row {
+            opacity: 0.7;
+            font-size: 12px;
+        }
+
+        /* 操作按钮容器 */
+        .component-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        /* 操作按钮样式 */
+        .component-actions button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .refresh-btn {
+            background-color: #9b59b6;
+            color: white;
+        }
+
+        .refresh-btn:hover {
+            background-color: #8e44ad;
+            transform: translateY(-1px);
+        }
+
+        .highlight-btn {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .highlight-btn:hover {
+            background-color: #229954;
+            transform: translateY(-1px);
+        }
+
+        .inspect-btn {
+            background-color: #e67e22;
+            color: white;
+        }
+
+        .inspect-btn:hover {
+            background-color: #d35400;
+            transform: translateY(-1px);
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes highlight {
+            0% { background-color: rgba(52, 152, 219, 0.3); }
+            100% { background-color: #f8f9fa; }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .highlight-btn, .inspect-btn {
+            flex: 1;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .highlight-btn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .highlight-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .inspect-btn {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            border: 1px solid #ddd;
+        }
+
+        .inspect-btn:hover {
+            background-color: #e74c3c;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .refresh-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+        }
+
+        /* 高亮元素样式 */
+        .highlighted-element {
+            outline: 3px solid #4CAF50;
+            animation: pulse 1s infinite;
+            position: relative;
+            z-index: 998;
+        }
+
+        @keyframes pulse {
+            0% { 
+                outline-color: #4CAF50;
+                outline-width: 3px;
+            }
+            50% { 
+                outline-color: #2196F3;
+                outline-width: 4px;
+            }
+            100% { 
+                outline-color: #4CAF50;
+                outline-width: 3px;
+            }
+        }
+
+        /* 统计信息区域 */
+        .stats-section {
+            background-color: #e3f2fd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .stats-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .stats-content {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .stats-content span {
+            background-color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* 加载和无结果提示 */
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+            font-style: italic;
+            background-color: #fdedec;
+            border: 1px solid #fadbd8;
+            border-radius: 8px;
+        }
+
+        /* 切换按钮 */
+        #inspector-toggle {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.4);
+        }
+
+        #inspector-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.6);
+        }
+
+        #inspector-toggle.active {
+            background-color: #e74c3c;
+            transform: rotate(45deg);
+        }
+
+        /* 搜索高亮样式 */
+        mark {
+            background-color: #ff9800;
+            color: white;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+
+        /* 滚动条样式 */
+        .component-inspector::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .component-inspector::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .component-inspector::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .component-inspector::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+    </style>
+</head>
+<body>
+        <!-- 全屏倒数覆盖层 -->
+        <div id="countdown-overlay" class="countdown-overlay">
+            <div id="countdown-number" class="countdown-number">3</div>
+        </div>
+    <div class="container">
+        <h1>简单节拍器</h1>
+        <p>这是一个简单的节拍器应用，我们将逐步完善它的功能。</p>
+        <div class="bpm-display">
+            <span id="denominator-icon" class="denominator-icon">𝅘𝅥</span>
+            <span id="bpm-value">120</span>
+            <span class="bpm-label">BPM</span>
+        </div>
+        <div class="controls">
+            <div class="control-group">
+                <div class="bpm-controls-row">
+                    <button id="bpm-decrease" class="bpm-control-btn decrease-btn">-</button>
+                    <label for="bpm-slider">调整速度 (BPM)</label>
+                    <button id="bpm-increase" class="bpm-control-btn increase-btn">+</button>
+                </div>
+                <div class="slider-with-controls">
+                    <input type="range" id="bpm-slider" min="20" max="300" value="120" step="1">
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="tone-selector">音色选择:</label>
+                <select id="tone-selector">
+                    <option value="standard">标准1</option>
+                    <option value="soft">标准2</option>
+                    <option value="electronic">电子1</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="volume-slider">调整音量:</label>
+                <span id="volume-value" class="volume-value">50</span>
+                <span class="volume-unit">%</span>
+                <input type="range" id="volume-slider" min="0" max="100" value="50" step="1">
+            </div>
+            <div class="control-group">
+                <label>节拍模式:</label>
+                <select id="beat-numerator"></select>
+                <span>/</span>
+                <select id="beat-denominator">
+                    <option value="1">1 𝅝</option>
+                    <option value="2">2 𝅗𝅥</option>
+                    <option value="4" selected>4 𝅘𝅥</option>
+                    <option value="8">8 𝅘𝅥𝅮</option>
+                    <option value="16">16 𝅘𝅥𝅯</option>
+                    <option value="32">32 𝅘𝅥𝅰</option>
+                </select>
+                <span>细分:</span>
+                <select id="subdivision">
+                    <option value="1" selected>1× 𝅘𝅥</option>
+                    <option value="2">2× 𝅘𝅥𝅮 𝅘𝅥𝅮</option>
+                    <option value="3">3× 𝅘𝅥⩦</option>
+                    <option value="4">4× 𝅘𝅥𝅯 𝅘𝅥𝅯 𝅘𝅥𝅯 𝅘𝅥𝅯</option>
+                    <option value="5">5× 𝅘𝅥⩧</option>
+                    <option value="6">6× 𝅘𝅥𝅮⩦ 𝅘𝅥𝅮⩦</option>
+                    <option value="7">7× 𝅘𝅥⩨</option>
+                    <option value="8">8× 𝅘𝅥𝅰 𝅘𝅥𝅰 𝅘𝅥𝅰 𝅘𝅥𝅰 𝅘𝅥𝅰 𝅘𝅥𝅰 𝅘𝅥𝅰 𝅘𝅥𝅰</option>
+                    <option value="dotted">附点 𝅘𝅥. 𝅘𝅥𝅮</option>
+                    <option value="ddotted">双附点 𝅘𝅥.. 𝅘𝅥𝅯</option>
+                    <option value="eighth_dotted">附点八分 𝅘𝅥𝅮. 𝅘𝅥𝅯</option>
+                    <option value="swing">摇摆 𝅘𝅥𝅮 𝅘𝅥𝅮</option>
+                    <option value="triplet_duplet">三连二 𝅘𝅥⩦ 𝅘𝅥⩦ 𝅘𝅥</option>
+                    <option value="rest">休止符 𝄼 𝅘𝅥</option>
+                </select>
+            </div>
+            <div class="beat-indicator">
+                <div class="indicator-dots" id="indicator-dots"></div>
+            </div>
+            <div class="button-group">
+                <button id="tap-btn" class="tap">TAP</button>
+                <button id="toggle-btn" class="start">开始</button>
+                <button id="reset-btn" class="reset">复位</button>
+                <button id="training-btn" class="training">训练</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 训练模式模态窗口 -->
+    <div id="training-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>训练模式</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="training-mode-tabs">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="progressive">变速模式</button>
+                        <button class="tab-btn" data-tab="segmented">分段训练</button>
+                        <button class="tab-btn" data-tab="random">随机变速模式</button>
+                        <button class="tab-btn" data-tab="rhythm">节奏控制</button>
+                    </div>
+                    
+                    <!-- 变速模式内容 -->
+                    <div class="tab-content active" id="progressive-tab">
+                        <h3>变速模式</h3>
+                        <div class="training-control-group">
+                            <label>初始速度 (BPM):</label>
+                            <input type="number" id="initial-bpm" min="20" max="300" value="60">
+                        </div>
+                        <div class="training-control-group">
+                            <label>目标速度 (BPM):</label>
+                            <input type="number" id="target-bpm" min="20" max="300" value="120">
+                        </div>
+                        <div class="training-control-group">
+                            <label>每多少小节变化一次:</label>
+                            <input type="number" id="bars-per-change" min="1" max="16" value="4">
+                        </div>
+                        <div class="training-control-group">
+                            <label>每次变化量 (BPM):</label>
+                            <input type="number" id="bpm-change-step" min="1" max="10" value="3">
+                        </div>
+                    </div>
+                    
+                    <!-- 随机变速模式内容 -->
+                    <div class="tab-content" id="random-tab">
+                        <h3>随机变速模式</h3>
+                        <div class="training-control-group">
+                            <label>基础速度 (BPM):</label>
+                            <input type="number" id="base-bpm" min="20" max="300" value="120">
+                        </div>
+                        <div class="training-control-group">
+                            <label>随机变化范围 (5%-10%):</label>
+                            <select id="random-range">
+                                <option value="5">±5%</option>
+                                <option value="7">±7%</option>
+                                <option value="10" selected>±10%</option>
+                            </select>
+                        </div>
+                        <div class="training-control-group">
+                            <label>每多少小节随机变化一次:</label>
+                            <input type="number" id="random-change-interval" min="1" max="16" value="4">
+                        </div>
+                    </div>
+
+                    <!-- 节奏控制内容 -->
+                    <div class="tab-content" id="rhythm-tab">
+                        <h3>节奏控制</h3>
+                        <div class="training-control-group">
+                            <label>基础速度 (BPM):</label>
+                            <input type="number" id="rhythm-base-bpm" min="20" max="300" value="120">
+                        </div>
+                        <div class="training-control-group">
+                            <label>小节静音概率:</label>
+                            <select id="mute-probability">
+                                <option value="5">5%</option>
+                                <option value="10">10%</option>
+                                <option value="15">15%</option>
+                                <option value="20">20%</option>
+                                <option value="25">25%</option>
+                                <option value="30">30%</option>
+                                <option value="35">35%</option>
+                                <option value="40">40%</option>
+                                <option value="45">45%</option>
+                                <option value="50">50%</option>
+                                <option value="55">55%</option>
+                                <option value="60">60%</option>
+                                <option value="65">65%</option>
+                                <option value="70">70%</option>
+                                <option value="75">75%</option>
+                                <option value="80">80%</option>
+                                <option value="85">85%</option>
+                                <option value="90">90%</option>
+                                <option value="95">95%</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <!-- 分段训练内容 -->
+                    <div class="tab-content" id="segmented-tab">
+                        <h3>分段训练</h3>
+                        <div class="training-control-group">
+                            <label>分段数量:</label>
+                            <input type="number" id="segments-count" min="2" max="8" value="2">
+                        </div>
+                        <div class="training-control-group">
+                            <label><input type="checkbox" id="loop-segments" checked> 循环播放</label>
+                        </div>
+                        <div id="segments-container" class="segments-container">
+                    <!-- 分段设置将动态生成 -->
+                </div>
+                    </div>
+                    
+                    <div class="training-controls-wrapper">
+                        <div class="countdown-control">
+                            <label for="countdown-beats">预备拍: </label>
+                            <select id="countdown-beats">
+                                <option value="0">0拍（直接开始）</option>
+                                <option value="1">1拍</option>
+                                <option value="2">2拍</option>
+                                <option value="3">3拍</option>
+                                <option value="4">4拍</option>
+                                <option value="5">5拍</option>
+                                <option value="6">6拍</option>
+                                <option value="7">7拍</option>
+                                <option value="8">8拍</option>
+                            </select>
+                        </div>
+                        <button id="toggle-training-btn" class="toggle-training start">开始训练</button>
+                    </div>
+                    <div class="training-status">
+                        <p id="training-status-text">就绪</p>
+                        <p id="current-training-bpm">当前BPM: <span id="training-bpm-value">60</span></p>
+                        <p id="bars-count">已完成: <span id="bars-completed">0</span> / <span id="bars-until-change">4</span> 小节</p>
+                        <p id="segment-info" style="display: none;">当前分段: <span id="current-segment">1</span> / <span id="total-segments">2</span></p>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="inspector-toggle">ⓘ</button>
+    <div class="component-inspector">
+        <div class="inspector-header">
+            <h2>组件信息查看器</h2>
+            <div class="search-container">
+                <input type="text" id="component-search" placeholder="搜索组件...">
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+        <div id="components-container"></div>
+        <button class="refresh-btn" id="refresh-inspector">刷新信息</button>
+    </div>
+
+    <script>
+        // 添加日志函数
+        function log(...args) {
+            console.log(...args);
+        }
+        
+        // 获取DOM元素
+        const bpmValueElement = document.getElementById('bpm-value');
+        const bpmSliderElement = document.getElementById('bpm-slider');
+        const volumeSliderElement = document.getElementById('volume-slider');
+        const toggleButton = document.getElementById('toggle-btn');
+        const beatNumeratorElement = document.getElementById('beat-numerator');
+        const beatDenominatorElement = document.getElementById('beat-denominator');
+        const subdivisionElement = document.getElementById('subdivision');
+        const indicatorDotsElement = document.getElementById('indicator-dots');
+        
+        // 定义节拍器状态变量
+        let isRunning = false;
+        let isStopping = false;
+        let audioContext = null;
+        let mainGainNode = null; // 主音量节点
+        let currentVolume = 0.5;
+        let currentTone = 'standard';
+        const toneSelectorElement = document.getElementById('tone-selector');
+        let currentBeatPosition = 1;
+        let currentNumerator = 4;
+        let currentDenominator = 4;
+        let currentSubdivision = '1';
+        
+        // 更新BPM显示函数
+        function updateBPMDisplay(bpm) {
+            if (bpmValueElement) {
+                bpmValueElement.textContent = bpm;
+            }
+        }
+
+        // 音频缓存
+        const soundBuffers = {}; // 存储不同音色的音频缓冲区
+        
+        // 调度相关变量
+        let nextBeatTime = 0; // 下一拍的计划时间点（秒）
+        let schedulerID = null; // 调度器ID
+        const SCHEDULE_AHEAD_TIME = 0.1; // 预排时间窗口（秒）
+        
+        // 初始化节拍分子选择器选项（1-16）
+        for (let i = 1; i <= 16; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            if (i === 4) {
+                option.selected = true;
+            }
+            beatNumeratorElement.appendChild(option);
+        }
+        
+        // 生成节拍指示器
+        function generateBeatIndicators() {
+            if (!indicatorDotsElement) {
+                console.error('节拍指示器容器不存在');
+                return;
+            }
+            
+            indicatorDotsElement.innerHTML = '';
+            
+            for (let i = 1; i <= currentNumerator; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'beat-dot';
+                if (i === 1) {
+                    dot.classList.add('first');
+                }
+                indicatorDotsElement.appendChild(dot);
+            }
+        }
+        
+        // 更新活动节拍指示器
+        function updateActiveIndicator() {
+            const dots = document.querySelectorAll('.beat-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.remove('active');
+                if (index + 1 === currentBeatPosition) {
+                    dot.classList.add('active');
+                }
+            });
+        }
+        
+        generateBeatIndicators();
+
+        // 初始化音频上下文的函数
+        function initAudioContext() {
+            try {
+                const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextConstructor) {
+                    const context = new AudioContextConstructor();
+                    // 创建主音量节点
+                    const gainNode = context.createGain();
+                    gainNode.gain.setValueAtTime(currentVolume, context.currentTime);
+                    gainNode.connect(context.destination);
+                    
+                    // 设置全局变量
+                    audioContext = context;
+                    mainGainNode = gainNode;
+                    
+                    // 初始化音频缓冲区
+                    generateSoundBuffers();
+                    
+                    return context;
+                } else {
+                    console.error('Web Audio API不支持，请使用现代浏览器');
+                    return null;
+                }
+            } catch (e) {
+                console.error('创建AudioContext时出错:', e);
+                return null;
+            }
+        }
+
+        // 生成音频缓冲区
+        function generateSoundBuffers() {
+            if (!audioContext) return;
+            
+            const sampleRate = audioContext.sampleRate;
+            const duration = 0.08; // 点击音效持续时间（秒）
+            const frameCount = Math.floor(duration * sampleRate);
+            
+            // 生成标准音色（正弦波）
+            const standardBuffer = audioContext.createBuffer(1, frameCount, sampleRate);
+            const standardData = standardBuffer.getChannelData(0);
+            for (let i = 0; i < frameCount; i++) {
+                const time = i / sampleRate;
+                // 衰减的正弦波
+                standardData[i] = Math.sin(2 * Math.PI * 800 * time) * Math.exp(-5 * time);
+            }
+            soundBuffers.standard = standardBuffer;
+            
+            // 生成强拍标准音色（更高频率）
+            const standardAccentBuffer = audioContext.createBuffer(1, frameCount, sampleRate);
+            const standardAccentData = standardAccentBuffer.getChannelData(0);
+            for (let i = 0; i < frameCount; i++) {
+                const time = i / sampleRate;
+                standardAccentData[i] = Math.sin(2 * Math.PI * 1000 * time) * Math.exp(-5 * time);
+            }
+            soundBuffers.standardAccent = standardAccentBuffer;
+            
+            // 生成电子音色（方波模拟）
+            const electronicBuffer = audioContext.createBuffer(1, frameCount, sampleRate);
+            const electronicData = electronicBuffer.getChannelData(0);
+            for (let i = 0; i < frameCount; i++) {
+                const time = i / sampleRate;
+                // 方波近似
+                const square = Math.sin(2 * Math.PI * 600 * time) >= 0 ? 1 : -1;
+                electronicData[i] = square * Math.exp(-8 * time);
+            }
+            soundBuffers.electronic = electronicBuffer;
+            
+            // 生成电子强拍音色
+            const electronicAccentBuffer = audioContext.createBuffer(1, frameCount, sampleRate);
+            const electronicAccentData = electronicAccentBuffer.getChannelData(0);
+            for (let i = 0; i < frameCount; i++) {
+                const time = i / sampleRate;
+                const square = Math.sin(2 * Math.PI * 1200 * time) >= 0 ? 1 : -1;
+                electronicAccentData[i] = square * Math.exp(-8 * time);
+            }
+            soundBuffers.electronicAccent = electronicAccentBuffer;
+            
+            // 生成柔和音色（平滑的正弦波）
+            const softBuffer = audioContext.createBuffer(1, frameCount, sampleRate);
+            const softData = softBuffer.getChannelData(0);
+            for (let i = 0; i < frameCount; i++) {
+                const time = i / sampleRate;
+                // 平滑的正弦波，更快的衰减
+                softData[i] = Math.sin(2 * Math.PI * 600 * time) * Math.exp(-10 * time);
+            }
+            soundBuffers.soft = softBuffer;
+            
+            // 生成柔和强拍音色
+            const softAccentBuffer = audioContext.createBuffer(1, frameCount, sampleRate);
+            const softAccentData = softAccentBuffer.getChannelData(0);
+            for (let i = 0; i < frameCount; i++) {
+                const time = i / sampleRate;
+                softAccentData[i] = Math.sin(2 * Math.PI * 800 * time) * Math.exp(-10 * time);
+            }
+            soundBuffers.softAccent = softAccentBuffer;
+            
+            console.log('音频缓冲区生成完成');
+        }
+        
+        function ensureAudioContext() {
+            if (!audioContext) {
+                console.warn('音频上下文未初始化');
+                return false;
+            }
+            
+            if (!mainGainNode) {
+                // 如果主音量节点不存在，创建一个
+                mainGainNode = audioContext.createGain();
+                mainGainNode.gain.setValueAtTime(currentVolume, audioContext.currentTime);
+                mainGainNode.connect(audioContext.destination);
+                
+                // 确保音频缓冲区已生成
+                if (Object.keys(soundBuffers).length === 0) {
+                    generateSoundBuffers();
+                }
+            }
+            
+            if (audioContext.state === 'suspended') {
+                try {
+                    audioContext.resume();
+                } catch (e) {
+                    console.error('恢复音频上下文失败:', e);
+                    return false;
+                }
+            }
+            
+            if (audioContext.state !== 'running') {
+                console.warn('音频上下文状态异常:', audioContext.state);
+                return false;
+            }
+            
+            return true;
+        }
+
+        // 在指定时间安排播放节拍
+        function scheduleBeatAt(startTime) {
+            if (isStopping || !isRunning) {
+                console.log('已触发停止，拦截调度请求');
+                return;
+            }
+
+            if (!ensureAudioContext()) {
+                console.warn('音频上下文状态异常，无法调度');
+                return;
+            }
+            
+            // 检查是否需要静音当前小节
+            const shouldMuteBar = isTrainingMode && trainingModeType === 'rhythm' && trainingConfig.muteCurrentBar;
+            
+            try {
+                if (isStopping || !isRunning) {
+                    console.log('执行前状态检查失败，拦截调度');
+                    return;
+                }
+                
+                const isFirstBeat = currentBeatPosition === 1;
+                const currentBPM = parseInt(bpmSliderElement.value);
+                
+                const beatInterval = (60000 / currentBPM) / 1000;
+                
+                // 根据细分音模式生成音符序列
+                const notePattern = generateSubdivisionPattern(currentSubdivision, beatInterval);
+                
+                // 只有当不需要静音当前小节时才播放声音
+                if (!shouldMuteBar) {
+                    playSubdivisionPattern(notePattern, startTime, isFirstBeat, beatInterval);
+                    
+                    // 更新节拍位置指示器（使用当前位置）
+                    updateActiveIndicator();
+                } else {
+                    // 静音时仍更新视觉指示器，但不播放声音
+                    if (currentBeatPosition === 1) {
+                        updateActiveIndicator();
+                    }
+                }
+                
+                // 更新节拍位置
+                currentBeatPosition++;
+                
+                // 获取当前应该使用的每小节拍数
+                const activeNumerator = currentNumerator; // 移除了节奏控制模式下的自定义拍数配置
+                
+                // 当到达小节结束时
+                if (currentBeatPosition > activeNumerator) {
+                    // 小节结束，调用训练模式回调
+                    if (isTrainingMode) {
+                        // 如果是节奏控制模式，重置静音标志
+                        if (trainingModeType === 'rhythm') {
+                            trainingConfig.muteCurrentBar = false;
+                        }
+                        onBarComplete();
+                    }
+                    
+                    // 重置节拍位置到下一小节的第一拍
+                    currentBeatPosition = 1;
+                }
+                
+            } catch (e) {
+                console.error('调度节拍出错:', e);
+            }
+        }
+        
+        // 保持向后兼容的playBeat函数，立即播放一个节拍
+        function playBeat() {
+            scheduleBeatAt(audioContext.currentTime);
+        }
+        
+        // 根据细分音模式生成音符时间点和音量模式
+        function generateSubdivisionPattern(subdivision, beatInterval) {
+            const pattern = [];
+            
+            switch(subdivision) {
+                case '1': // 一等分
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    break;
+                case '2': // 二等分
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    pattern.push({ time: beatInterval / 2, volume: 0.8, isMain: false });
+                    break;
+                case '3': // 三连音
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    pattern.push({ time: beatInterval / 3, volume: 0.7, isMain: false });
+                    pattern.push({ time: beatInterval * 2 / 3, volume: 0.7, isMain: false });
+                    break;
+                case '4': // 四等分
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    pattern.push({ time: beatInterval / 4, volume: 0.6, isMain: false });
+                    pattern.push({ time: beatInterval / 2, volume: 0.8, isMain: false });
+                    pattern.push({ time: beatInterval * 3 / 4, volume: 0.6, isMain: false });
+                    break;
+                case '5': // 五连音
+                    for (let i = 0; i < 5; i++) {
+                        pattern.push({ 
+                            time: beatInterval * i / 5, 
+                            volume: i === 0 ? 1.0 : 0.7, 
+                            isMain: i === 0 
+                        });
+                    }
+                    break;
+                case '6': // 六连音
+                    for (let i = 0; i < 6; i++) {
+                        pattern.push({ 
+                            time: beatInterval * i / 6, 
+                            volume: i === 0 ? 1.0 : (i % 2 === 1 ? 0.7 : 0.5), 
+                            isMain: i === 0 
+                        });
+                    }
+                    break;
+                case '7': // 七连音
+                    for (let i = 0; i < 7; i++) {
+                        pattern.push({ 
+                            time: beatInterval * i / 7, 
+                            volume: i === 0 ? 1.0 : 0.6, 
+                            isMain: i === 0 
+                        });
+                    }
+                    break;
+                case '8': // 八等分
+                    for (let i = 0; i < 8; i++) {
+                        pattern.push({ 
+                            time: beatInterval * i / 8, 
+                            volume: i === 0 ? 1.0 : (i % 4 === 0 ? 0.8 : (i % 2 === 0 ? 0.6 : 0.5)), 
+                            isMain: i === 0 
+                        });
+                    }
+                    break;
+                case 'dotted': // 附点音符（3:1比例）
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    pattern.push({ time: beatInterval * 0.75, volume: 0.8, isMain: false });
+                    break;
+                case 'ddotted': // 双附点音符（7:1比例）
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    pattern.push({ time: beatInterval * 0.875, volume: 0.7, isMain: false });
+                    break;
+                case 'eighth_dotted': // 附点八分音符（3:1比例）
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    pattern.push({ time: beatInterval * 0.375, volume: 0.8, isMain: false });
+                    pattern.push({ time: beatInterval * 0.625, volume: 0.8, isMain: false });
+                    break;
+                case 'swing': // 摇摆节奏（2:1比例）
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    pattern.push({ time: beatInterval * 0.666, volume: 0.8, isMain: false });
+                    break;
+                case 'triplet_duplet': // 三连二
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+                    pattern.push({ time: beatInterval * 2 / 3, volume: 0.7, isMain: false });
+                    pattern.push({ time: beatInterval * 4 / 3, volume: 0.8, isMain: false });
+                    break;
+                case 'rest': // 休止符模式
+                    pattern.push({ time: 0, volume: 0, isMain: true }); // 第一个音符休止
+                    pattern.push({ time: beatInterval / 2, volume: 1.0, isMain: false });
+                    break;
+                default:
+                    pattern.push({ time: 0, volume: 1.0, isMain: true });
+            }
+            
+            return pattern;
+        }
+        
+        // 播放细分音模式
+        function playSubdivisionPattern(pattern, startTime, isFirstBeat, beatInterval) {
+            pattern.forEach(note => {
+                // 跳过音量为0的休止符
+                if (note.volume === 0) {
+                    return;
+                }
+                
+                const now = startTime + note.time;
+                
+                // 根据音色和是否为主拍选择合适的音频缓冲区
+                let buffer;
+                if (currentTone === 'standard') {
+                    buffer = isFirstBeat && note.isMain ? soundBuffers.standardAccent : soundBuffers.standard;
+                } else if (currentTone === 'electronic') {
+                    buffer = isFirstBeat && note.isMain ? soundBuffers.electronicAccent : soundBuffers.electronic;
+                } else if (currentTone === 'soft') {
+                    buffer = isFirstBeat && note.isMain ? soundBuffers.softAccent : soundBuffers.soft;
+                } else {
+                    buffer = isFirstBeat && note.isMain ? soundBuffers.standardAccent : soundBuffers.standard;
+                }
+                
+                // 创建缓冲区源节点
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                
+                // 创建短时间的包络节点来控制单个音符的音量
+                const envelopeGain = audioContext.createGain();
+                
+                // 根据音符音量和是否为主拍设置音量
+                const volume = currentVolume * note.volume * (note.isMain ? (isFirstBeat ? 1.2 : 1.0) : 0.9);
+                
+                // 设置包络 - 使用指数平滑曲线避免咔嗒声
+                envelopeGain.gain.cancelScheduledValues(now);
+                envelopeGain.gain.setValueAtTime(0.0001, now);
+                envelopeGain.gain.exponentialRampToValueAtTime(volume, now + 0.002); // 快速上升
+                envelopeGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08); // 指数衰减结束，使用0.0001避免异常
+                
+                // 连接节点
+                source.connect(envelopeGain);
+                envelopeGain.connect(mainGainNode);
+                
+                // 播放声音
+                source.start(now);
+                source.stop(now + 0.1); // 确保停止
+                
+                // 清理回调
+                source.onended = function() {
+                    try {
+                        source.disconnect();
+                        envelopeGain.disconnect();
+                    } catch (e) {}
+                };
+            });
+        }
+
+        toggleButton.addEventListener('click', function() {
+            if (toggleButton.disabled) return;
+            toggleButton.disabled = true;
+            
+            if (!isRunning) {
+                startMetronome();
+            } else {
+                stopMetronome();
+            }
+            
+            setTimeout(() => {
+                toggleButton.disabled = false;
+            }, 100);
+        });
+        
+        // 调度器函数 - 使用requestAnimationFrame实现精确预排
+        function scheduler() {
+            if (!isRunning || isStopping) return;
+            
+            if (!audioContext) return;
+            
+            // 检查是否需要预排更多节拍
+            const currentTime = audioContext.currentTime;
+            
+            // 预排未来0.1秒内的节拍
+            while (nextBeatTime < currentTime + SCHEDULE_AHEAD_TIME) {
+                // 在第一拍时应用新的BPM和拍数
+                if (currentBeatPosition === 1) {
+                    // 应用新的BPM
+                    if (isTrainingMode && trainingConfig.nextBpm !== undefined) {
+                        trainingConfig.currentBpm = trainingConfig.nextBpm;
+                        if (bpmSliderElement) {
+                            bpmSliderElement.value = trainingConfig.currentBpm;
+                            updateBPMDisplay(trainingConfig.currentBpm);
+                        }
+                        log('BPM已在新小节开始时更新为', trainingConfig.currentBpm);
+                        delete trainingConfig.nextBpm;
+                    }
+                    
+                    // 应用新的拍数（仅在分段训练模式下）
+                    if (isTrainingMode && trainingModeType === 'segmented' && trainingConfig.nextBeatsPerBar !== undefined) {
+                        setBeatsPerBar(trainingConfig.nextBeatsPerBar);
+                        log('拍数已在新小节开始时更新为', trainingConfig.nextBeatsPerBar);
+                        delete trainingConfig.nextBeatsPerBar;
+                    }
+                }
+                
+                // 使用当前BPM值计算节拍间隔
+                const currentBpm = parseInt(bpmSliderElement.value);
+                const beatInterval = 60 / currentBpm; // 节拍间隔（秒）
+                
+                // 安排这个节拍
+                scheduleBeatAt(nextBeatTime);
+                
+                // 更新下一拍的时间
+                nextBeatTime += beatInterval;
+            }
+            
+            // 继续调度器循环
+            if (isRunning && !isStopping) {
+                schedulerID = requestAnimationFrame(scheduler);
+            }
+        }
+        
+        // 顶层的scheduleNextBeat函数 - 初始化调度器
+        function scheduleNextBeat() {
+            if (!isRunning || isStopping) return;
+            
+            // 初始化下一拍的时间
+            if (audioContext) {
+                nextBeatTime = audioContext.currentTime;
+                
+                // 启动调度器循环
+                schedulerID = requestAnimationFrame(scheduler);
+            }
+        }
+        
+        function startMetronome() {
+            isRunning = true;
+            isStopping = false;
+            
+            // 清除之前的调度器
+            if (schedulerID !== null) {
+                cancelAnimationFrame(schedulerID);
+                schedulerID = null;
+            }
+            
+            toggleButton.textContent = '停止';
+            toggleButton.classList.remove('start');
+            toggleButton.classList.add('stop');
+            
+            if (!audioContext) {
+                audioContext = initAudioContext();
+                if (!audioContext) {
+                    alert('无法初始化音频系统，请使用支持Web Audio API的现代浏览器');
+                    stopMetronome();
+                    return;
+                }
+            }
+            
+            currentBeatPosition = 1;
+            generateBeatIndicators();
+            updateActiveIndicator();
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('音频上下文已恢复');
+                    if (!isStopping && isRunning) {
+                        // 立即播放一个节拍
+                        playBeat();
+                        // 初始化下一拍的时间
+                        const bpm = parseInt(bpmSliderElement.value);
+                        const beatInterval = 60 / bpm;
+                        nextBeatTime = audioContext.currentTime + beatInterval;
+                        // 启动调度器
+                        schedulerID = requestAnimationFrame(scheduler);
+                    }
+                }).catch(e => {
+                    console.error('恢复音频上下文失败:', e);
+                });
+            } else {
+                if (!isStopping && isRunning) {
+                    // 立即播放一个节拍
+                    playBeat();
+                    // 初始化下一拍的时间
+                    const bpm = parseInt(bpmSliderElement.value);
+                    const beatInterval = 60 / bpm;
+                    nextBeatTime = audioContext.currentTime + beatInterval;
+                    // 启动调度器
+                    schedulerID = requestAnimationFrame(scheduler);
+                }
+            }
+            
+            console.log('节拍器已启动，BPM:', parseInt(bpmSliderElement.value));
+        }
+        
+        function stopAllAudio() {
+            // 清除调度器
+            if (schedulerID !== null) {
+                cancelAnimationFrame(schedulerID);
+                schedulerID = null;
+            }
+            
+            if (audioContext) {
+                try {
+                    const muteGain = audioContext.createGain();
+                    muteGain.gain.setValueAtTime(0, audioContext.currentTime);
+                    muteGain.connect(audioContext.destination);
+                } catch (e) {
+                    console.error('强制停止音频出错:', e);
+                }
+            }
+        }
+
+        function stopMetronome() {
+            isStopping = true;
+            isRunning = false;
+            
+            // 清除调度器
+            if (schedulerID !== null) {
+                cancelAnimationFrame(schedulerID);
+                schedulerID = null;
+            }
+            
+            stopAllAudio();
+            
+            toggleButton.textContent = '开始';
+            toggleButton.classList.remove('stop');
+            toggleButton.classList.add('start');
+            
+            const dots = document.querySelectorAll('.beat-dot');
+            dots.forEach(dot => dot.classList.remove('active'));
+            
+            setTimeout(() => {
+                isStopping = false;
+            }, 100);
+            
+            console.log('节拍器已停止');
+        }
+
+        document.addEventListener('click', function initAudioOnUserInteraction() {
+            if (!audioContext) {
+                audioContext = initAudioContext();
+                if (audioContext) {
+                    audioContext.suspend();
+                }
+            }
+        }, { once: true });
+
+        const bpmDecreaseBtn = document.getElementById('bpm-decrease');
+        const bpmIncreaseBtn = document.getElementById('bpm-increase');
+        const tapBtn = document.getElementById('tap-btn');
+        
+        let tapTimes = [];
+        let tapTimeout;
+        const TAP_TIMEOUT_MS = 2000;
+        
+        let debounceTimer = null;
+        
+        function handleBPMChange(newBpm) {
+            bpmValueElement.textContent = newBpm;
+            bpmSliderElement.value = newBpm;
+            
+            clearTimeout(debounceTimer);
+            
+            debounceTimer = setTimeout(function() {
+                if (isRunning) {
+                    // 清除当前调度器
+                    if (schedulerID !== null) {
+                        cancelAnimationFrame(schedulerID);
+                        schedulerID = null;
+                    }
+                    
+                    // 立即播放一个节拍
+                    playBeat();
+                    
+                    // 初始化下一拍的时间
+                    const bpm = parseInt(bpmSliderElement.value);
+                    const beatInterval = 60 / bpm;
+                    nextBeatTime = audioContext.currentTime + beatInterval;
+                    
+                    // 重新启动调度器
+                    schedulerID = requestAnimationFrame(scheduler);
+                    
+                    console.log(`节拍速度已更新为${newBpm} BPM`);
+                }
+            }, 150);
+        }
+        
+        bpmSliderElement.addEventListener('input', function() {
+            const newBpm = parseInt(this.value);
+            handleBPMChange(newBpm);
+        });
+        
+        bpmDecreaseBtn.addEventListener('click', function() {
+            let currentBPM = parseInt(bpmSliderElement.value);
+            if (currentBPM > 20) {
+                currentBPM -= 1;
+                handleBPMChange(currentBPM);
+            }
+        });
+        
+        tapBtn.addEventListener('click', function() {
+            const now = Date.now();
+            
+            if (tapTimeout) {
+                clearTimeout(tapTimeout);
+            }
+            
+            tapTimes.push(now);
+            
+            if (tapTimes.length >= 2) {
+                if (tapTimes.length > 5)
+                {
+                    tapTimes.shift();
+                }
+                
+                const intervals = [];
+                for (let i = 1; i < tapTimes.length; i++) {
+                    intervals.push(tapTimes[i] - tapTimes[i - 1]);
+                }
+                
+                const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                const calculatedBPM = Math.round(60000 / avgInterval);
+                
+                if (calculatedBPM >= 20 && calculatedBPM <= 300) {
+                    handleBPMChange(calculatedBPM);
+                }
+            }
+            
+            tapTimeout = setTimeout(function() {
+                tapTimes = [];
+            }, TAP_TIMEOUT_MS);
+        });
+        
+        bpmIncreaseBtn.addEventListener('click', function() {
+            let currentBPM = parseInt(bpmSliderElement.value);
+            if (currentBPM < 300) {
+                currentBPM += 1;
+                handleBPMChange(currentBPM);
+            }
+        });
+        
+        const volumeValueElement = document.getElementById('volume-value');
+        
+        volumeSliderElement.addEventListener('input', function() {
+            const volumePercent = parseInt(this.value);
+            volumeValueElement.textContent = volumePercent;
+            currentVolume = volumePercent / 100;
+            
+            // 更新主音量节点的增益
+            if (mainGainNode && audioContext) {
+                mainGainNode.gain.setValueAtTime(currentVolume, audioContext.currentTime);
+            }
+        });
+        
+        toneSelectorElement.addEventListener('change', function() {
+            currentTone = this.value;
+            console.log('音色已切换为:', currentTone);
+            
+            // 如果音频上下文已初始化，重新生成音频缓冲区
+            if (audioContext && mainGainNode) {
+                generateSoundBuffers();
+            }
+        });
+        
+        beatNumeratorElement.addEventListener('change', function() {
+            currentNumerator = parseInt(this.value);
+            currentBeatPosition = 1;
+            generateBeatIndicators();
+            updateActiveIndicator();
+            console.log(`节拍模式已更改为: ${currentNumerator}/${currentDenominator}`);
+        });
+        
+        // 根据分母值获取对应的音符图标
+        function getNoteIcon(denominator) {
+            const iconMap = {
+                1: '𝅝',  // 全音符
+                2: '𝅗𝅥', // 二分音符
+                4: '𝅘𝅥', // 四分音符
+                8: '𝅘𝅥𝅮', // 八分音符
+                16: '𝅘𝅥𝅯', // 十六分音符
+                32: '𝅘𝅥𝅰'  // 三十二分音符
+            };
+            return iconMap[denominator] || '𝅘𝅥';
+        }
+        
+        // 更新音符图标
+        function updateNoteIcon() {
+            const denominatorIcon = document.getElementById('denominator-icon');
+            if (denominatorIcon) {
+                denominatorIcon.textContent = getNoteIcon(currentDenominator);
+            }
+        }
+        
+        
+        // 添加这个新函数
+        function setBeatsPerBar(beats) {
+            currentNumerator = parseInt(beats) || 4;
+            if (beatNumeratorElement) {
+                beatNumeratorElement.value = currentNumerator;
+            }
+            currentBeatPosition = 1;
+            generateBeatIndicators();
+            updateActiveIndicator();
+            log('拍数已设置为:', currentNumerator);
+        }
+        
+        beatDenominatorElement.addEventListener('change', function() {
+            currentDenominator = parseInt(this.value);
+            currentBeatPosition = 1;
+            generateBeatIndicators();
+            updateActiveIndicator();
+            updateNoteIcon(); // 更新音符图标
+            
+            if (isRunning) {
+                // 清除当前调度器
+                if (schedulerID !== null) {
+                    cancelAnimationFrame(schedulerID);
+                    schedulerID = null;
+                }
+                
+                // 立即播放一个节拍
+                playBeat();
+                
+                // 初始化下一拍的时间
+                const bpm = parseInt(bpmSliderElement.value);
+                const beatInterval = 60 / bpm;
+                nextBeatTime = audioContext.currentTime + beatInterval;
+                
+                // 重新启动调度器
+                schedulerID = requestAnimationFrame(scheduler);
+            }
+            
+            console.log(`节拍模式已更改为: ${currentNumerator}/${currentDenominator}`);
+        });
+        
+        subdivisionElement.addEventListener('change', function() {
+            currentSubdivision = this.value;
+            console.log(`细分音模式已更改为: ${currentSubdivision}`);
+            
+            // 如果节拍器正在运行，需要重新初始化播放间隔
+            if (isRunning) {
+                // 清除当前调度器
+                if (schedulerID !== null) {
+                    cancelAnimationFrame(schedulerID);
+                    schedulerID = null;
+                }
+                
+                // 立即播放一个节拍
+                playBeat();
+                
+                // 初始化下一拍的时间
+                const bpm = parseInt(bpmSliderElement.value);
+                const beatInterval = 60 / bpm;
+                nextBeatTime = audioContext.currentTime + beatInterval;
+                
+                // 重新启动调度器
+                schedulerID = requestAnimationFrame(scheduler);
+            }
+        });
+        
+        const resetBtn = document.getElementById('reset-btn');
+        
+        resetBtn.addEventListener('click', function() {
+            if (isRunning) {
+                stopMetronome();
+            }
+            
+            const defaultBPM = 120;
+            handleBPMChange(defaultBPM);
+            
+            volumeSliderElement.value = 50;
+            volumeValueElement.textContent = 50;
+            currentVolume = 0.5;
+            
+            toneSelectorElement.value = 'standard';
+            currentTone = 'standard';
+            
+            beatNumeratorElement.value = 4;
+            beatDenominatorElement.value = 4;
+            subdivisionElement.value = '1';
+            currentNumerator = 4;
+            currentDenominator = 4;
+            currentSubdivision = '1';
+            updateNoteIcon(); // 更新音符图标
+            currentBeatPosition = 1;
+            
+            generateBeatIndicators();
+            updateActiveIndicator();
+            
+            tapTimes = [];
+            if (tapTimeout) {
+                clearTimeout(tapTimeout);
+            }
+            
+            console.log('节拍器已复位到默认设置');
+        });
+
+        // 组件查看器功能
+        const inspectorToggle = document.getElementById('inspector-toggle');
+        const componentInspector = document.querySelector('.component-inspector');
+        const componentsContainer = document.getElementById('components-container');
+        const refreshBtn = document.getElementById('refresh-inspector');
+        const searchInput = document.getElementById('component-search');
+        
+        let currentHighlightedElement = null;
+        
+        inspectorToggle.addEventListener('click', function() {
+            componentInspector.classList.toggle('active');
+            if (componentInspector.classList.contains('active')) {
+                updateComponentInfo();
+            }
+        });
+        
+        refreshBtn.addEventListener('click', function() {
+            updateComponentInfo();
+        });
+        
+        searchInput.addEventListener('input', function() {
+            filterComponents(this.value);
+        });
+        
+        function updateComponentInfo() {
+            componentsContainer.innerHTML = '<div class="loading-message">正在加载组件信息...</div>';
+            
+            setTimeout(() => {
+                const components = gatherComponentInfo();
+                displayComponents(components);
+            }, 100);
+        }
+        
+        function gatherComponentInfo() {
+            const components = {
+                controls: [],
+                buttons: [],
+                displays: [],
+                inputs: [],
+                training: [],
+                indicators: []
+            };
+            
+            // 基础控制器
+            const bpmSlider = document.getElementById('bpm-slider');
+            if (bpmSlider) {
+                components.controls.push({
+                    name: 'BPM滑块',
+                    type: 'range',
+                    id: 'bpm-slider',
+                    value: bpmSlider.value,
+                    min: bpmSlider.min,
+                    max: bpmSlider.max,
+                    element: bpmSlider
+                });
+            }
+            
+            const volumeSlider = document.getElementById('volume-slider');
+            if (volumeSlider) {
+                components.controls.push({
+                    name: '音量滑块',
+                    type: 'range',
+                    id: 'volume-slider',
+                    value: volumeSlider.value + '%',
+                    min: volumeSlider.min,
+                    max: volumeSlider.max,
+                    element: volumeSlider
+                });
+            }
+            
+            // 音色和节拍设置
+            const toneSelector = document.getElementById('tone-selector');
+            if (toneSelector) {
+                components.inputs.push({
+                    name: '音色选择器',
+                    type: 'select',
+                    id: 'tone-selector',
+                    value: toneSelector.options[toneSelector.selectedIndex].text,
+                    options: Array.from(toneSelector.options).map(opt => opt.text).join(', '),
+                    element: toneSelector
+                });
+            }
+            
+            const beatNumerator = document.getElementById('beat-numerator');
+            if (beatNumerator) {
+                components.inputs.push({
+                    name: '节拍分子',
+                    type: 'select',
+                    id: 'beat-numerator',
+                    value: beatNumerator.value,
+                    element: beatNumerator
+                });
+            }
+            
+            const beatDenominator = document.getElementById('beat-denominator');
+            if (beatDenominator) {
+                components.inputs.push({
+                    name: '节拍分母',
+                    type: 'select',
+                    id: 'beat-denominator',
+                    value: beatDenominator.value,
+                    element: beatDenominator
+                });
+            }
+            
+            const subdivisionElement = document.getElementById('subdivision');
+            if (subdivisionElement) {
+                components.inputs.push({
+                    name: '细分选择器',
+                    type: 'select',
+                    id: 'subdivision',
+                    value: subdivisionElement.options[subdivisionElement.selectedIndex].text,
+                    element: subdivisionElement
+                });
+            }
+            
+            // 按钮
+            const toggleBtn = document.getElementById('toggle-btn');
+            if (toggleBtn) {
+                components.buttons.push({
+                    name: '开始/停止按钮',
+                    type: 'button',
+                    id: 'toggle-btn',
+                    state: isRunning ? '运行中' : '已停止',
+                    text: toggleBtn.textContent,
+                    element: toggleBtn
+                });
+            }
+            
+            const tapBtn = document.getElementById('tap-btn');
+            if (tapBtn) {
+                components.buttons.push({
+                    name: 'TAP按钮',
+                    type: 'button',
+                    id: 'tap-btn',
+                    text: tapBtn.textContent,
+                    element: tapBtn
+                });
+            }
+            
+            const resetBtn = document.getElementById('reset-btn');
+            if (resetBtn) {
+                components.buttons.push({
+                    name: '复位按钮',
+                    type: 'button',
+                    id: 'reset-btn',
+                    text: resetBtn.textContent,
+                    element: resetBtn
+                });
+            }
+            
+            // 显示元素
+            const bpmDisplay = document.getElementById('bpm-value');
+            if (bpmDisplay) {
+                components.displays.push({
+                    name: 'BPM显示',
+                    type: 'display',
+                    id: 'bpm-value',
+                    value: bpmDisplay.textContent,
+                    element: bpmDisplay
+                });
+            }
+            
+            const volumeDisplay = document.getElementById('volume-value');
+            if (volumeDisplay) {
+                components.displays.push({
+                    name: '音量显示',
+                    type: 'display',
+                    id: 'volume-value',
+                    value: volumeDisplay.textContent + '%',
+                    element: volumeDisplay
+                });
+            }
+            
+            // 指示器
+            const indicatorDotsElement = document.getElementById('indicator-dots');
+            if (indicatorDotsElement) {
+                components.indicators.push({
+                    name: '节拍指示器',
+                    type: 'indicator',
+                    id: 'indicator-dots',
+                    totalDots: indicatorDotsElement.children.length,
+                    element: indicatorDotsElement
+                });
+            }
+            
+            // 训练模式相关组件
+            const trainingBtn = document.getElementById('training-btn');
+            if (trainingBtn) {
+                components.training.push({
+                    name: '训练按钮',
+                    type: 'button',
+                    id: 'training-btn',
+                    text: trainingBtn.textContent,
+                    element: trainingBtn
+                });
+            }
+            
+            const trainingStatusText = document.getElementById('training-status-text');
+            if (trainingStatusText) {
+                components.training.push({
+                    name: '训练状态显示',
+                    type: 'display',
+                    id: 'training-status-text',
+                    value: trainingStatusText.textContent,
+                    element: trainingStatusText
+                });
+            }
+            
+            const trainingBpmValue = document.getElementById('training-bpm-value');
+            if (trainingBpmValue) {
+                components.training.push({
+                    name: '训练BPM显示',
+                    type: 'display',
+                    id: 'training-bpm-value',
+                    value: trainingBpmValue.textContent,
+                    element: trainingBpmValue
+                });
+            }
+            
+            const barsCompletedElement = document.getElementById('bars-completed');
+            if (barsCompletedElement) {
+                components.training.push({
+                    name: '已完成小节数',
+                    type: 'display',
+                    id: 'bars-completed',
+                    value: barsCompletedElement.textContent,
+                    element: barsCompletedElement
+                });
+            }
+            
+            const barsUntilChangeElement = document.getElementById('bars-until-change');
+            if (barsUntilChangeElement) {
+                components.training.push({
+                    name: '剩余小节数',
+                    type: 'display',
+                    id: 'bars-until-change',
+                    value: barsUntilChangeElement.textContent,
+                    element: barsUntilChangeElement
+                });
+            }
+            
+            // 模态窗口相关组件
+            const trainingModal = document.getElementById('training-modal');
+            if (trainingModal) {
+                components.training.push({
+                    name: '训练模态窗口',
+                    type: 'modal',
+                    id: 'training-modal',
+                    visible: trainingModal.style.display === 'block' ? '可见' : '隐藏',
+                    element: trainingModal
+                });
+            }
+            
+            return components;
+        }
+        
+        function displayComponents(components) {
+            let html = '';
+            
+            const totalComponents = components.controls.length + components.buttons.length + 
+                                   components.displays.length + components.inputs.length +
+                                   components.training.length + components.indicators.length;
+            
+            // 收集更多统计信息
+            const bpm = document.getElementById('bpm-value')?.textContent || '未知';
+            const currentTime = new Date().toLocaleTimeString();
+            
+            html += `
+                <div class="stats-section">
+                    <div class="stats-header">系统信息</div>
+                    <div class="stats-content">
+                        <span>总组件数: ${totalComponents}</span>
+                        <span>运行状态: ${isRunning ? '运行中' : '已停止'}</span>
+                    </div>
+                    <div class="stats-content">
+                        <span>当前BPM: ${bpm}</span>
+                        <span>训练模式: ${isTrainingMode ? '已激活' : '未激活'}</span>
+                    </div>
+                    <div class="stats-content">
+                        <span>当前时间: ${currentTime}</span>
+                        <span>音频状态: ${audioContext?.state || '未初始化'}</span>
+                    </div>
+                </div>
+                
+                <div class="stats-section">
+                    <div class="stats-header">组件分布</div>
+                    <div class="stats-content">
+                        <span>控制器: ${components.controls.length}</span>
+                        <span>按钮: ${components.buttons.length}</span>
+                    </div>
+                    <div class="stats-content">
+                        <span>显示元素: ${components.displays.length}</span>
+                        <span>输入元素: ${components.inputs.length}</span>
+                    </div>
+                    <div class="stats-content">
+                        <span>训练组件: ${components.training.length}</span>
+                        <span>指示器: ${components.indicators.length}</span>
+                    </div>
+                </div>
+                
+                <!-- 过滤器控件 -->
+                <div class="filter-controls">
+                    <select id="type-filter">
+                        <option value="all">所有类型</option>
+                        <option value="range">滑块</option>
+                        <option value="button">按钮</option>
+                        <option value="display">显示</option>
+                        <option value="select">选择器</option>
+                        <option value="modal">模态窗口</option>
+                        <option value="indicator">指示器</option>
+                    </select>
+                    <select id="state-filter">
+                        <option value="all">所有状态</option>
+                        <option value="visible">可见</option>
+                        <option value="hidden">隐藏</option>
+                    </select>
+                </div>
+            `;
+            
+            // 添加可折叠组件组
+            if (components.controls.length > 0) {
+                html += `
+                <div class="component-group">
+                    <div class="group-header" onclick="toggleComponentGroup(this)">
+                        <h3>控制器</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">`;
+                components.controls.forEach(comp => {
+                    html += createComponentHTML(comp);
+                });
+                html += `</div></div>`;
+            }
+            
+            if (components.buttons.length > 0) {
+                html += `
+                <div class="component-group">
+                    <div class="group-header" onclick="toggleComponentGroup(this)">
+                        <h3>按钮</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">`;
+                components.buttons.forEach(comp => {
+                    html += createComponentHTML(comp);
+                });
+                html += `</div></div>`;
+            }
+            
+            if (components.displays.length > 0) {
+                html += `
+                <div class="component-group">
+                    <div class="group-header" onclick="toggleComponentGroup(this)">
+                        <h3>显示元素</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">`;
+                components.displays.forEach(comp => {
+                    html += createComponentHTML(comp);
+                });
+                html += `</div></div>`;
+            }
+            
+            if (components.inputs.length > 0) {
+                html += `
+                <div class="component-group">
+                    <div class="group-header" onclick="toggleComponentGroup(this)">
+                        <h3>输入元素</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">`;
+                components.inputs.forEach(comp => {
+                    html += createComponentHTML(comp);
+                });
+                html += `</div></div>`;
+            }
+            
+            if (components.indicators.length > 0) {
+                html += `
+                <div class="component-group">
+                    <div class="group-header" onclick="toggleComponentGroup(this)">
+                        <h3>指示器</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">`;
+                components.indicators.forEach(comp => {
+                    html += createComponentHTML(comp);
+                });
+                html += `</div></div>`;
+            }
+            
+            if (components.training.length > 0) {
+                html += `
+                <div class="component-group">
+                    <div class="group-header" onclick="toggleComponentGroup(this)">
+                        <h3>训练组件</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="group-content">`;
+                components.training.forEach(comp => {
+                    html += createComponentHTML(comp);
+                });
+                html += `</div></div>`;
+            }
+            
+            componentsContainer.innerHTML = html;
+            
+            attachComponentClickHandlers();
+            
+            // 添加过滤器事件监听
+            document.getElementById('type-filter')?.addEventListener('change', updateFilter);
+            document.getElementById('state-filter')?.addEventListener('change', updateFilter);
+        }
+        
+        // 切换组件组折叠状态
+        function toggleComponentGroup(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.toggle-icon');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▶';
+            }
+        }
+        
+        // 更新过滤器
+        function updateFilter() {
+            const searchTerm = document.getElementById('component-search').value;
+            filterComponents(searchTerm);
+        }
+        
+        function createComponentHTML(comp) {
+            // 添加实时时间戳
+            const timestamp = new Date().toLocaleTimeString();
+            let infoRows = `
+                <div class="info-row">
+                    <span class="info-label">类型:</span>
+                    <span class="info-value">${comp.type}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">ID:</span>
+                    <span class="info-value">${comp.id}</span>
+                </div>
+            `;
+            
+            if (comp.value !== undefined) {
+                infoRows += `
+                    <div class="info-row">
+                        <span class="info-label">当前值:</span>
+                        <span class="info-value value-display" data-component-id="${comp.id}">${comp.value}</span>
+                    </div>
+                `;
+            }
+            
+            if (comp.min !== undefined && comp.max !== undefined) {
+                infoRows += `
+                    <div class="info-row">
+                        <span class="info-label">范围:</span>
+                        <span class="info-value">${comp.min} - ${comp.max}</span>
+                    </div>
+                `;
+            }
+            
+            if (comp.state !== undefined) {
+                infoRows += `
+                    <div class="info-row">
+                        <span class="info-label">状态:</span>
+                        <span class="info-value state-display" data-component-id="${comp.id}">${comp.state}</span>
+                    </div>
+                `;
+            }
+            
+            if (comp.text !== undefined) {
+                infoRows += `
+                    <div class="info-row">
+                        <span class="info-label">文本:</span>
+                        <span class="info-value">${comp.text}</span>
+                    </div>
+                `;
+            }
+            
+            if (comp.options !== undefined) {
+                infoRows += `
+                    <div class="info-row">
+                        <span class="info-label">选项:</span>
+                        <span class="info-value">${comp.options}</span>
+                    </div>
+                `;
+            }
+            
+            if (comp.totalDots !== undefined) {
+                infoRows += `
+                    <div class="info-row">
+                        <span class="info-label">总点数:</span>
+                        <span class="info-value">${comp.totalDots}</span>
+                    </div>
+                `;
+            }
+            
+            if (comp.visible !== undefined) {
+                infoRows += `
+                    <div class="info-row">
+                        <span class="info-label">可见性:</span>
+                        <span class="info-value">${comp.visible}</span>
+                    </div>
+                `;
+            }
+            
+            // 添加元素状态信息
+            if (comp.element) {
+                const isVisible = comp.element.offsetParent !== null ? '可见' : '隐藏';
+                const isDisabled = comp.element.disabled ? '已禁用' : '可用';
+                
+                infoRows += `
+                    <div class="info-row">
+                        <span class="info-label">元素可见性:</span>
+                        <span class="info-value visibility-display" data-component-id="${comp.id}">${isVisible}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">交互状态:</span>
+                        <span class="info-value">${isDisabled}</span>
+                    </div>
+                `;
+            }
+            
+            // 添加更新时间戳
+            infoRows += `
+                <div class="info-row timestamp-row">
+                    <span class="info-label">更新时间:</span>
+                    <span class="info-value">${timestamp}</span>
+                </div>
+            `;
+            
+            // 获取组件状态指示器
+            const isVisible = comp.element ? (comp.element.offsetParent !== null ? 'visible' : 'hidden') : 'unknown';
+            
+            return `
+                <div class="component-item" data-component-id="${comp.id}">
+                    <div class="component-header">
+                        <div class="component-title">${comp.name}</div>
+                        <span class="component-indicator" data-status="${isVisible}"></span>
+                    </div>
+                    <div class="component-info">
+                        ${infoRows}
+                    </div>
+                    <div class="component-actions">
+                        <button class="refresh-btn" data-target="${comp.id}">刷新</button>
+                        <button class="highlight-btn" data-target="${comp.id}">高亮</button>
+                        <button class="inspect-btn" data-target="${comp.id}">检查</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function attachComponentClickHandlers() {
+            // 刷新按钮点击处理
+            document.querySelectorAll('.refresh-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const componentId = this.getAttribute('data-target');
+                    refreshSingleComponent(componentId);
+                });
+            });
+            
+            // 高亮按钮点击处理
+            document.querySelectorAll('.highlight-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const componentId = this.getAttribute('data-target');
+                    highlightElement(componentId);
+                });
+            });
+            
+            // 检查按钮点击处理
+            document.querySelectorAll('.inspect-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const componentId = this.getAttribute('data-target');
+                    inspectElement(componentId);
+                });
+            });
+            
+            // 组件项点击处理
+            document.querySelectorAll('.component-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const componentId = this.getAttribute('data-component-id');
+                    highlightElement(componentId);
+                });
+            });
+        }
+        
+        // 刷新单个组件信息
+        function refreshSingleComponent(componentId) {
+            // 收集组件最新信息
+            const componentInfo = gatherComponentInfo();
+            
+            // 从所有组件中查找目标组件
+            let updatedComp = null;
+            for (const groupKey in componentInfo) {
+                const group = componentInfo[groupKey];
+                for (const comp of group) {
+                    if (comp.id === componentId) {
+                        updatedComp = comp;
+                        break;
+                    }
+                }
+                if (updatedComp) break;
+            }
+            
+            if (updatedComp) {
+                // 更新组件显示信息
+                const componentElement = document.querySelector(`.component-item[data-component-id="${componentId}"]`);
+                if (componentElement) {
+                    // 更新值显示
+                    const valueDisplay = componentElement.querySelector('.value-display[data-component-id="' + componentId + '"]');
+                    if (valueDisplay && updatedComp.value !== undefined) {
+                        valueDisplay.textContent = updatedComp.value;
+                        // 添加闪烁效果
+                        valueDisplay.classList.add('updated');
+                        setTimeout(() => valueDisplay.classList.remove('updated'), 1000);
+                    }
+                    
+                    // 更新状态显示
+                    const stateDisplay = componentElement.querySelector('.state-display[data-component-id="' + componentId + '"]');
+                    if (stateDisplay && updatedComp.state !== undefined) {
+                        stateDisplay.textContent = updatedComp.state;
+                        stateDisplay.classList.add('updated');
+                        setTimeout(() => stateDisplay.classList.remove('updated'), 1000);
+                    }
+                    
+                    // 更新可见性显示
+                    const visibilityDisplay = componentElement.querySelector('.visibility-display[data-component-id="' + componentId + '"]');
+                    if (visibilityDisplay && updatedComp.element) {
+                        const isVisible = updatedComp.element.offsetParent !== null ? '可见' : '隐藏';
+                        visibilityDisplay.textContent = isVisible;
+                        visibilityDisplay.classList.add('updated');
+                        setTimeout(() => visibilityDisplay.classList.remove('updated'), 1000);
+                    }
+                    
+                    // 更新时间戳
+                    const timestampRow = componentElement.querySelector('.timestamp-row .info-value');
+                    if (timestampRow) {
+                        timestampRow.textContent = new Date().toLocaleTimeString();
+                    }
+                    
+                    // 更新状态指示器
+                    const indicator = componentElement.querySelector('.component-indicator');
+                    if (indicator && updatedComp.element) {
+                        const status = updatedComp.element.offsetParent !== null ? 'visible' : 'hidden';
+                        indicator.setAttribute('data-status', status);
+                    }
+                }
+                
+                console.log('组件已刷新:', componentId);
+            }
+        }
+        
+        function inspectElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                // 高亮元素
+                highlightElement(elementId);
+                
+                // 收集详细信息
+                const rect = element.getBoundingClientRect();
+                const computedStyle = window.getComputedStyle(element);
+                
+                // 创建模态框
+                createInspectionModal({
+                    id: elementId,
+                    tagName: element.tagName.toLowerCase(),
+                    dimensions: {
+                        width: Math.round(rect.width),
+                        height: Math.round(rect.height),
+                        left: Math.round(rect.left),
+                        top: Math.round(rect.top)
+                    },
+                    visibility: element.offsetParent !== null ? '可见' : '隐藏',
+                    classes: element.className || '无',
+                    style: {
+                        display: computedStyle.display,
+                        visibility: computedStyle.visibility,
+                        position: computedStyle.position,
+                        zIndex: computedStyle.zIndex
+                    },
+                    attributes: getElementAttributes(element),
+                    textContent: truncateText(element.textContent, 100),
+                    childCount: element.childElementCount,
+                    hasEventListeners: hasAttachedEventListeners(element)
+                });
+                
+                console.log('已启动元素检查:', elementId);
+            }
+        }
+        
+        function getElementAttributes(element) {
+            const attributes = {};
+            for (let i = 0; i < element.attributes.length; i++) {
+                const attr = element.attributes[i];
+                attributes[attr.name] = attr.value;
+            }
+            return attributes;
+        }
+        
+        function truncateText(text, maxLength) {
+            if (!text || text.length <= maxLength) return text || '';
+            return text.substring(0, maxLength) + '...';
+        }
+        
+        function hasAttachedEventListeners(element) {
+            // 简单检查是否有常见的事件处理属性
+            const eventAttributes = ['onclick', 'onchange', 'oninput', 'onmouseover', 'onmouseout'];
+            return eventAttributes.some(attr => element.hasAttribute(attr) && element.getAttribute(attr).trim() !== '');
+        }
+        
+        function createInspectionModal(elementInfo) {
+            // 检查是否已有模态框，如果有则移除
+            let modal = document.getElementById('element-inspection-modal');
+            if (modal) {
+                modal.remove();
+            }
+            
+            // 创建新的模态框
+            modal = document.createElement('div');
+            modal.id = 'element-inspection-modal';
+            modal.className = 'inspection-modal';
+            
+            // 构建属性信息HTML
+            let attributesHtml = '';
+            for (const [name, value] of Object.entries(elementInfo.attributes)) {
+                attributesHtml += `<div class="attr-item">
+                    <span class="attr-name">${name}</span>
+                    <span class="attr-value">${value}</span>
+                </div>`;
+            }
+            
+            modal.innerHTML = `
+                <div class="modal-backdrop" id="modal-backdrop"></div>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>元素检查器</h3>
+                        <button class="close-btn" id="close-inspection-modal">×</button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="info-section">
+                            <h4>基本信息</h4>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">元素ID:</span>
+                                    <span class="info-value">${elementInfo.id}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">标签名:</span>
+                                    <span class="info-value">${elementInfo.tagName}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">尺寸:</span>
+                                    <span class="info-value">${elementInfo.dimensions.width}x${elementInfo.dimensions.height}px</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">位置:</span>
+                                    <span class="info-value">(${elementInfo.dimensions.left}, ${elementInfo.dimensions.top})px</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">可见性:</span>
+                                    <span class="info-value">${elementInfo.visibility}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">子元素数:</span>
+                                    <span class="info-value">${elementInfo.childCount}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h4>CSS信息</h4>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">CSS类:</span>
+                                    <span class="info-value">${elementInfo.classes}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">display:</span>
+                                    <span class="info-value">${elementInfo.style.display}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">visibility:</span>
+                                    <span class="info-value">${elementInfo.style.visibility}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">position:</span>
+                                    <span class="info-value">${elementInfo.style.position}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">z-index:</span>
+                                    <span class="info-value">${elementInfo.style.zIndex}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h4>属性</h4>
+                            <div class="attributes-container">
+                                ${attributesHtml || '<div class="no-attributes">无自定义属性</div>'}
+                            </div>
+                        </div>
+                        
+                        ${elementInfo.textContent ? `
+                        <div class="info-section">
+                            <h4>文本内容</h4>
+                            <div class="text-content">${elementInfo.textContent}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button class="action-btn" id="highlight-again-btn">再次高亮元素</button>
+                        <button class="action-btn close-btn" id="close-btn">关闭</button>
+                    </div>
+                </div>
+            `;
+            
+            // 添加模态框样式
+            const style = document.createElement('style');
+            style.textContent = `
+                .inspection-modal {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 2000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .modal-backdrop {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                }
+                
+                .modal-content {
+                    position: relative;
+                    background-color: white;
+                    border-radius: 8px;
+                    width: 90%;
+                    max-width: 600px;
+                    max-height: 80vh;
+                    display: flex;
+                    flex-direction: column;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                    animation: modalFadeIn 0.3s ease-out;
+                }
+                
+                @keyframes modalFadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                .modal-header {
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background-color: #f8f9fa;
+                    border-radius: 8px 8px 0 0;
+                }
+                
+                .modal-header h3 {
+                    margin: 0;
+                    color: #333;
+                    font-size: 18px;
+                }
+                
+                .close-btn {
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: #666;
+                    padding: 0;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 4px;
+                    transition: all 0.2s;
+                }
+                
+                .close-btn:hover {
+                    background-color: #eee;
+                    color: #333;
+                }
+                
+                .modal-body {
+                    padding: 20px;
+                    overflow-y: auto;
+                    flex: 1;
+                }
+                
+                .info-section {
+                    margin-bottom: 25px;
+                }
+                
+                .info-section h4 {
+                    margin: 0 0 12px 0;
+                    color: #555;
+                    font-size: 16px;
+                    font-weight: 500;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 8px;
+                }
+                
+                .info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 10px;
+                }
+                
+                .info-item {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 6px 0;
+                    border-bottom: 1px solid #f0f0f0;
+                }
+                
+                .info-label {
+                    font-weight: 500;
+                    color: #666;
+                    font-size: 14px;
+                }
+                
+                .info-value {
+                    color: #333;
+                    font-size: 14px;
+                    font-family: monospace;
+                }
+                
+                .attributes-container {
+                    max-height: 200px;
+                    overflow-y: auto;
+                    border: 1px solid #eee;
+                    border-radius: 4px;
+                }
+                
+                .attr-item {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #f0f0f0;
+                    font-size: 14px;
+                }
+                
+                .attr-item:last-child {
+                    border-bottom: none;
+                }
+                
+                .attr-name {
+                    font-weight: 500;
+                    color: #3498db;
+                }
+                
+                .attr-value {
+                    font-family: monospace;
+                    color: #2ecc71;
+                }
+                
+                .no-attributes {
+                    padding: 20px;
+                    text-align: center;
+                    color: #999;
+                    font-style: italic;
+                }
+                
+                .text-content {
+                    padding: 10px;
+                    background-color: #f8f9fa;
+                    border-radius: 4px;
+                    font-family: monospace;
+                    font-size: 14px;
+                    max-height: 120px;
+                    overflow-y: auto;
+                    white-space: pre-wrap;
+                    word-break: break-all;
+                }
+                
+                .modal-footer {
+                    padding: 15px 20px;
+                    border-top: 1px solid #eee;
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                    background-color: #f8f9fa;
+                    border-radius: 0 0 8px 8px;
+                }
+                
+                .action-btn {
+                    padding: 8px 16px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    transition: all 0.2s;
+                }
+                
+                #highlight-again-btn {
+                    background-color: #3498db;
+                    color: white;
+                }
+                
+                #highlight-again-btn:hover {
+                    background-color: #2980b9;
+                }
+                
+                #close-btn {
+                    background-color: #6c757d;
+                    color: white;
+                }
+                
+                #close-btn:hover {
+                    background-color: #5a6268;
+                }
+            `;
+            
+            document.body.appendChild(style);
+            document.body.appendChild(modal);
+            
+            // 添加事件监听器
+            document.getElementById('close-inspection-modal').addEventListener('click', closeModal);
+            document.getElementById('close-btn').addEventListener('click', closeModal);
+            document.getElementById('highlight-again-btn').addEventListener('click', () => {
+                highlightElement(elementInfo.id);
+            });
+            
+            document.getElementById('modal-backdrop').addEventListener('click', closeModal);
+            
+            // 按ESC键关闭模态框
+            document.addEventListener('keydown', handleEscKey);
+            
+            function closeModal() {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscKey);
+            }
+            
+            function handleEscKey(event) {
+                if (event.key === 'Escape') {
+                    closeModal();
+                }
+            }
+        }
+        
+        function highlightElement(elementId) {
+            if (currentHighlightedElement) {
+                currentHighlightedElement.classList.remove('highlighted-element');
+                currentHighlightedElement = null;
+            }
+            
+            const element = document.getElementById(elementId);
+            if (element) {
+                // 记录原始样式，以便在高亮结束后恢复
+                const originalStyle = element.style.cssText;
+                
+                // 滚动到元素可见区域
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // 添加高亮类
+                element.classList.add('highlighted-element');
+                currentHighlightedElement = element;
+                
+                // 添加额外的视觉效果
+                element.style.transition = 'all 0.3s ease';
+                
+                // 显示高亮提示
+                const tooltip = document.createElement('div');
+                tooltip.textContent = `高亮元素: ${elementId}`;
+                tooltip.style.cssText = `
+                    position: absolute;
+                    background-color: #3498db;
+                    color: white;
+                    padding: 4px 10px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    z-index: 1001;
+                    pointer-events: none;
+                    white-space: nowrap;
+                    animation: fadeInOut 3s ease-in-out;
+                `;
+                document.body.appendChild(tooltip);
+                
+                // 定位提示框
+                const rect = element.getBoundingClientRect();
+                tooltip.style.left = `${rect.left + window.scrollX}px`;
+                tooltip.style.top = `${rect.top - 30 + window.scrollY}px`;
+                
+                // 3秒后自动移除高亮
+                setTimeout(() => {
+                    if (currentHighlightedElement === element) {
+                        element.classList.remove('highlighted-element');
+                        element.style.cssText = originalStyle;
+                        currentHighlightedElement = null;
+                        
+                        // 移除提示框
+                        if (tooltip.parentNode) {
+                            tooltip.parentNode.removeChild(tooltip);
+                        }
+                        
+                        console.log(`已移除元素 ${elementId} 的高亮`);
+                    }
+                }, 3000);
+                
+                console.log(`已高亮元素: ${elementId}`);
+            }
+        }
+        
+        // 添加动画样式
+        const animationStyle = document.createElement('style');
+        animationStyle.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translateY(10px); }
+                10%, 90% { opacity: 1; transform: translateY(0); }
+                100% { opacity: 0; transform: translateY(-10px); }
+            }
+            
+            /* 高亮元素的样式增强 */
+            .highlighted-element {
+                animation: pulseHighlight 1.5s infinite ease-in-out !important;
+                outline: 2px solid #3498db !important;
+                outline-offset: 3px !important;
+                box-shadow: 0 0 15px rgba(52, 152, 219, 0.5) !important;
+            }
+            
+            @keyframes pulseHighlight {
+                0%, 100% { outline-color: #3498db; box-shadow: 0 0 15px rgba(52, 152, 219, 0.5); }
+                50% { outline-color: #2980b9; box-shadow: 0 0 25px rgba(52, 152, 219, 0.8); }
+            }
+        `;
+        document.head.appendChild(animationStyle);
+        
+        // 添加防抖变量
+        let filterTimeout;
+        
+        function filterComponents(searchTerm) {
+            // 防抖处理
+            if (filterTimeout) {
+                clearTimeout(filterTimeout);
+            }
+            
+            filterTimeout = setTimeout(() => {
+                const componentItems = document.querySelectorAll('.component-item');
+                const componentGroups = document.querySelectorAll('.component-group');
+                let visibleCount = 0;
+                
+                searchTerm = searchTerm.toLowerCase().trim();
+                
+                // 获取过滤器值
+                const typeFilter = document.getElementById('type-filter')?.value || 'all';
+                const stateFilter = document.getElementById('state-filter')?.value || 'all';
+                
+                // 移除之前的高亮和恢复显示状态
+                componentItems.forEach(item => {
+                    const titleEl = item.querySelector('.component-title');
+                    if (titleEl) {
+                        titleEl.innerHTML = titleEl.textContent;
+                    }
+                    
+                    const infoValues = item.querySelectorAll('.info-value');
+                    infoValues.forEach(el => {
+                        el.innerHTML = el.textContent;
+                    });
+                    
+                    item.style.display = 'block';
+                });
+                
+                componentGroups.forEach(group => {
+                    group.style.display = 'block';
+                });
+                
+                // 移除之前的无结果提示
+                const oldNoResults = document.querySelector('.no-results');
+                if (oldNoResults) {
+                    oldNoResults.remove();
+                }
+                
+                // 应用过滤条件
+                componentItems.forEach(item => {
+                    let matchesSearch = true;
+                    let matchesType = true;
+                    let matchesState = true;
+                    
+                    // 搜索过滤
+                    if (searchTerm) {
+                        const text = item.textContent.toLowerCase();
+                        matchesSearch = text.includes(searchTerm.toLowerCase());
+                    }
+                    
+                    // 类型过滤
+                    if (typeFilter !== 'all') {
+                        const typeValue = item.querySelector('.info-row:contains("类型") .info-value');
+                        matchesType = typeValue && typeValue.textContent.toLowerCase() === typeFilter;
+                    }
+                    
+                    // 状态过滤
+                    if (stateFilter !== 'all') {
+                        const indicator = item.querySelector('.component-indicator');
+                        const status = indicator ? indicator.getAttribute('data-status') : 'unknown';
+                        matchesState = status === stateFilter;
+                    }
+                    
+                    // 综合判断
+                    const matches = matchesSearch && matchesType && matchesState;
+                    item.style.display = matches ? 'block' : 'none';
+                    if (matches) visibleCount++;
+                    
+                    // 高亮匹配文本
+                    if (matches && searchTerm) {
+                        highlightText(item, searchTerm);
+                    }
+                });
+                
+                // 处理组件组显示
+                componentGroups.forEach(group => {
+                    const visibleItems = group.querySelectorAll('.component-item[style="display: block;"]');
+                    const hasVisibleItems = visibleItems.length > 0;
+                    
+                    group.style.display = hasVisibleItems ? 'block' : 'none';
+                });
+                
+                // 如果没有搜索词且过滤器都为all，则显示所有组件
+                if (searchTerm === '' && typeFilter === 'all' && stateFilter === 'all') {
+                    return;
+                }
+                
+                // 过滤组件
+                componentItems.forEach(item => {
+                    const title = item.querySelector('.component-title').textContent.toLowerCase();
+                    const titleEl = item.querySelector('.component-title');
+                    const infoValues = Array.from(item.querySelectorAll('.info-value'));
+                    
+                    // 检查更多字段
+                    const allText = [
+                        title,
+                        ...infoValues.map(el => el.textContent.toLowerCase()),
+                        item.getAttribute('data-component-id')?.toLowerCase() || ''
+                    ].join(' ');
+                    
+                    const matches = allText.includes(searchTerm);
+                    
+                    if (matches) {
+                        item.style.display = 'block';
+                        visibleCount++;
+                        
+                        // 高亮标题
+                        if (titleEl) {
+                            titleEl.innerHTML = highlightText(titleEl.textContent, searchTerm);
+                        }
+                        
+                        // 高亮信息值
+                        infoValues.forEach(el => {
+                            if (el.textContent.toLowerCase().includes(searchTerm)) {
+                                el.innerHTML = highlightText(el.textContent, searchTerm);
+                            }
+                        });
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // 处理组件组显示
+                componentGroups.forEach(group => {
+                    const visibleItems = Array.from(group.querySelectorAll('.component-item'))
+                        .filter(item => item.style.display !== 'none');
+                    
+                    if (visibleItems.length === 0 && searchTerm !== '') {
+                        group.style.display = 'none';
+                    } else {
+                        group.style.display = 'block';
+                    }
+                });
+                
+                // 显示无结果提示
+                if (visibleCount === 0 && searchTerm !== '') {
+                    const noResultsEl = document.createElement('div');
+                    noResultsEl.className = 'no-results';
+                    noResultsEl.innerHTML = `
+                        <div style="font-size: 24px; margin-bottom: 10px;">🔍</div>
+                        <div style="font-weight: 500; margin-bottom: 5px;">未找到匹配的组件</div>
+                        <div style="font-size: 13px; color: #666;">
+                            搜索词: "${searchTerm}"
+                        </div>
+                        <div style="font-size: 12px; color: #999; margin-top: 10px;">
+                            尝试使用其他关键词或清空搜索框
+                        </div>
+                    `;
+                    componentsContainer.appendChild(noResultsEl);
+                    
+                    // 记录搜索失败
+                    console.log(`搜索失败: 未找到匹配"${searchTerm}"的组件`);
+                }
+            }, 250); // 250ms 防抖延迟
+        }
+        
+        function highlightText(text, searchTerm) {
+            if (!searchTerm || !text) return text;
+            
+            try {
+                // 转义正则特殊字符
+                const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(${escapedTerm})`, 'gi');
+                return text.replace(regex, '<mark>$1</mark>');
+            } catch (e) {
+                console.error('搜索高亮错误:', e);
+                return text;
+            }
+        }
+        
+        // 实现简单的本地事件锁机制
+        let localEventLock = false;
+        const LOCK_DURATION = 50; // 减小锁定时间，支持更快的点击速度
+        
+        function tryLocalLock() {
+            if (localEventLock) {
+                console.warn('⚠️ [shortcut] 操作锁定中，阻止重复触发');
+                return false;
+            }
+            
+            localEventLock = true;
+            setTimeout(() => {
+                localEventLock = false;
+            }, LOCK_DURATION);
+            
+            return true;
+        }
+        
+        // 添加防抖标志和时间戳，用于控制快捷键
+        let lastToggleTime = 0;
+        const DEBOUNCE_TIME = 300; // 防抖时间（毫秒）
+        
+        // 首先获取所有按钮元素
+        const resetButton = document.getElementById('reset-btn');
+        const tapButton = document.getElementById('tap-btn');
+        
+        // 为window对象添加键盘事件监听器，实现快捷键控制
+        // 使用keydown事件代替keyup，确保即使下拉菜单获得焦点也能捕获事件
+        window.addEventListener('keydown', function(event) {
+            // 检查是否按下的是空格键 - 用于控制节拍器的开始/停止
+            if (event.code === 'Space') {
+                // 阻止空格键的默认行为（滚动页面或在下拉菜单中选择）
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // 忽略长按重复触发
+                if (event.repeat) {
+                    console.log('🔄 [space-shortcut] 忽略重复事件');
+                    return;
+                }
+                
+                // 检查是否没有同时按下其他修饰键（如Shift、Ctrl等）
+                // 这样可以避免与浏览器或系统快捷键冲突
+                if (!event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+                    // 🔥 使用本地事件锁防止重复触发
+                    if (!tryLocalLock()) {
+                        return;
+                    }
+                    
+                    // 触发开始/停止按钮的点击事件
+                    if (toggleButton) {
+                        toggleButton.click();
+                    }
+                    
+                    // 输出调试信息到控制台
+                    console.log('✅ [space-shortcut] 执行节拍器切换');
+                }
+            }
+            // 检查是否按下的是R键（用于复位节拍器）
+            else if (event.code === 'KeyR' && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+                // 阻止默认行为
+                event.preventDefault();
+                
+                // 触发复位按钮的点击事件，恢复所有默认设置
+                if (resetButton) {
+                    resetButton.click();
+                }
+                
+                console.log('R键被按下，执行复位操作');
+            }
+            // 检查是否按下的是T键（用于TAP测速）
+            else if (event.code === 'KeyT' && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+                // 阻止默认行为
+                event.preventDefault();
+                
+                // 忽略长按重复触发
+                if (event.repeat) {
+                    console.log('🔄 [tap-shortcut] 忽略重复事件');
+                    return;
+                }
+                
+                // 使用本地事件锁防止重复触发
+                if (!tryLocalLock()) {
+                    return;
+                }
+                
+                // 触发TAP按钮的点击事件
+                if (tapButton) {
+                    tapButton.click();
+                }
+                
+                console.log('✅ [tap-shortcut] T键被按下，执行TAP测速操作');
+            }
+        });
+        
+        // 为按钮添加ARIA属性，提高可访问性
+        // 为开始/停止按钮设置键盘快捷键提示
+        if (toggleButton) {
+            toggleButton.setAttribute('aria-keyshortcuts', ' ');
+            toggleButton.setAttribute('title', '开始/停止 (空格键)');
+        }
+        
+        // 为复位按钮设置键盘快捷键提示
+        if (resetButton) {
+            resetButton.setAttribute('aria-keyshortcuts', 'R');
+            resetButton.setAttribute('title', '复位 (R键)');
+        }
+        
+        // 为TAP按钮设置键盘快捷键提示
+        if (tapButton) {
+            tapButton.setAttribute('aria-keyshortcuts', 'T');
+            tapButton.setAttribute('title', 'TAP测速 (T键)');
+        }
+        
+        // 训练模式相关代码
+        // 训练模式状态变量
+        let isTrainingMode = false;
+        let trainingConfig = {
+            initialBpm: 60,
+            targetBpm: 120,
+            barsPerChange: 4,
+            bpmChangeStep: 3,
+            currentBpm: 60,
+            barsCompleted: 0,
+            isIncreasing: true
+        };
+        
+        // 获取DOM元素
+        const trainingBtn = document.getElementById('training-btn');
+        const trainingModal = document.getElementById('training-modal');
+        const closeModal = document.querySelector('.close-modal');
+        const initialBpmInput = document.getElementById('initial-bpm');
+        const targetBpmInput = document.getElementById('target-bpm');
+        const barsPerChangeInput = document.getElementById('bars-per-change');
+        const bpmChangeStepInput = document.getElementById('bpm-change-step');
+        const baseBpmInput = document.getElementById('base-bpm');
+        const randomRangeInput = document.getElementById('random-range');
+        const randomChangeIntervalInput = document.getElementById('random-change-interval');
+        const rhythmBaseBpmInput = document.getElementById('rhythm-base-bpm');
+        const muteProbabilityInput = document.getElementById('mute-probability');
+        // 移除了节奏控制的每小节拍数输入
+        const toggleTrainingBtn = document.getElementById('toggle-training-btn');
+        const trainingStatusText = document.getElementById('training-status-text');
+        const trainingBpmValue = document.getElementById('training-bpm-value');
+        const barsCompletedElement = document.getElementById('bars-completed');
+        const barsUntilChangeElement = document.getElementById('bars-until-change');
+        
+        // 分段训练相关DOM元素
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const segmentsCountInput = document.getElementById('segments-count');
+        const segmentsContainer = document.getElementById('segments-container');
+        const loopSegmentsCheckbox = document.getElementById('loop-segments');
+        const segmentInfo = document.getElementById('segment-info');
+        const currentSegmentElement = document.getElementById('current-segment');
+        const totalSegmentsElement = document.getElementById('total-segments');
+        
+        // 标签切换逻辑
+        if (tabBtns.length > 0) {
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.getAttribute('data-tab');
+                    
+                    // 更新标签按钮状态
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // 更新标签内容显示
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    const activeContent = document.getElementById(`${tab}-tab`);
+                    if (activeContent) activeContent.classList.add('active');
+                });
+            });
+        }
+        
+        // 初始化训练模式类型
+        let trainingModeType = 'progressive'; // 'progressive' 或 'segmented'
+        
+        // 模态窗口控制
+        if (trainingBtn && trainingModal) {
+            trainingBtn.addEventListener('click', () => {
+                trainingModal.style.display = 'block';
+            });
+        }
+        
+        if (closeModal && trainingModal) {
+            closeModal.addEventListener('click', () => {
+                trainingModal.style.display = 'none';
+            });
+        }
+        
+        // 点击模态窗口外部关闭
+        if (trainingModal) {
+            trainingModal.addEventListener('click', (e) => {
+                if (e.target === trainingModal) {
+                    trainingModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // 生成分段设置UI
+        function generateSegmentsUI(count) {
+            if (!segmentsContainer || !segmentsCountInput) return;
+            
+            // 确保分段数量在有效范围内（至少2个，最多8个）
+            const validCount = Math.max(2, Math.min(8, count));
+            
+            // 更新输入框值
+            segmentsCountInput.value = validCount;
+            
+            // 清空容器
+            segmentsContainer.innerHTML = '';
+            
+            // 默认分段配置
+            const defaultSegments = [
+                { bpm: 60, beatsPerBar: 4, bars: 4 },
+                { bpm: 80, beatsPerBar: 4, bars: 4 },
+                { bpm: 100, beatsPerBar: 4, bars: 4 },
+                { bpm: 120, beatsPerBar: 4, bars: 4 },
+                { bpm: 140, beatsPerBar: 4, bars: 4 },
+                { bpm: 160, beatsPerBar: 4, bars: 4 },
+                { bpm: 180, beatsPerBar: 4, bars: 4 },
+                { bpm: 200, beatsPerBar: 4, bars: 4 }
+            ];
+            
+            // 生成每个分段
+            for (let i = 0; i < validCount; i++) {
+                const segmentConfig = defaultSegments[i] || defaultSegments[0];
+                const segmentDiv = document.createElement('div');
+                segmentDiv.className = 'segment-config';
+                segmentDiv.style.marginBottom = '20px';
+                segmentDiv.style.padding = '15px';
+                segmentDiv.style.border = '1px solid #ccc';
+                segmentDiv.style.borderRadius = '5px';
+                
+                // 关键逻辑：只有当分段数量大于等于3时，才显示删除按钮
+                const showDeleteButton = validCount >= 3;
+                
+                // 创建分段HTML内容
+                let headerHtml = '';
+                if (showDeleteButton) {
+                    // 显示删除按钮
+                    headerHtml = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin: 0;">分段 ${i + 1}</h4>
+                            <button class="remove-segment-btn" style="background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                                删除
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // 不显示删除按钮
+                    headerHtml = `
+                        <h4 style="margin-top: 0;">分段 ${i + 1}</h4>
+                    `;
+                }
+                
+                segmentDiv.innerHTML = headerHtml + `
+                    <div class="training-control-group">
+                        <label>BPM:</label>
+                        <input type="number" class="segment-bpm" min="20" max="300" value="${segmentConfig.bpm}">
+                    </div>
+                    <div class="training-control-group">
+                        <label>拍数/小节:</label>
+                        <input type="number" class="segment-beats" min="1" max="16" value="${segmentConfig.beatsPerBar}">
+                    </div>
+                    <div class="training-control-group">
+                        <label>小节数:</label>
+                        <input type="number" class="segment-bars" min="1" max="32" value="${segmentConfig.bars}">
+                    </div>
+                `;
+                
+                // 添加到容器
+                segmentsContainer.appendChild(segmentDiv);
+                
+                // 如果显示删除按钮，添加点击事件
+                if (showDeleteButton) {
+                    const deleteBtn = segmentDiv.querySelector('.remove-segment-btn');
+                    if (deleteBtn) {
+                        deleteBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            // 确保删除后至少保留2个分段
+                            const newCount = validCount - 1;
+                            if (newCount >= 2) {
+                                generateSegmentsUI(newCount);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        
+        // 初始化分段训练UI
+        if (segmentsCountInput && segmentsContainer) {
+            // 设置输入框属性
+            segmentsCountInput.min = 2;
+            segmentsCountInput.max = 8;
+            segmentsCountInput.value = 2;
+            
+            // 添加变化事件监听
+            segmentsCountInput.addEventListener('change', () => {
+                const count = parseInt(segmentsCountInput.value) || 2;
+                generateSegmentsUI(count);
+            });
+            
+            // 初始生成2个分段（不带删除按钮）
+            generateSegmentsUI(2);
+        }
+        
+        // 初始化训练配置
+        function initializeTrainingConfig() {
+            // 重置基本配置
+            trainingConfig.currentBpm = 60;
+            trainingConfig.barsCompleted = 0;
+            trainingConfig.nextBpm = undefined;
+            trainingConfig.shouldStopAfterNextChange = false;
+            
+            // 根据当前激活的标签确定训练模式类型
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab) {
+                trainingModeType = activeTab.getAttribute('data-tab');
+            }
+            
+            if (trainingModeType === 'progressive') {
+                // 变速模式配置
+                trainingConfig.initialBpm = parseInt(initialBpmInput?.value || 60);
+                trainingConfig.targetBpm = parseInt(targetBpmInput?.value || 120);
+                trainingConfig.barsPerChange = parseInt(barsPerChangeInput?.value || 4);
+                trainingConfig.bpmChangeStep = parseInt(bpmChangeStepInput?.value || 3);
+                trainingConfig.currentBpm = trainingConfig.initialBpm;
+                trainingConfig.isIncreasing = trainingConfig.initialBpm < trainingConfig.targetBpm;
+            } else if (trainingModeType === 'segmented') {
+                // 分段训练配置
+                trainingConfig.segments = [];
+                const segmentConfigs = document.querySelectorAll('.segment-config');
+                segmentConfigs.forEach((segment, index) => {
+                    const bpm = parseInt(segment.querySelector('.segment-bpm')?.value || 60);
+                    const beatsPerBar = parseInt(segment.querySelector('.segment-beats')?.value || 4);
+                    const bars = parseInt(segment.querySelector('.segment-bars')?.value || 4);
+                    
+                    trainingConfig.segments.push({
+                        bpm,
+                        beatsPerBar,
+                        bars,
+                        totalBeats: beatsPerBar * bars
+                    });
+                });
+                
+                trainingConfig.currentSegmentIndex = 0;
+                // 安全地设置当前分段，防止空数组导致的错误
+                if (trainingConfig.segments.length > 0) {
+                    trainingConfig.currentSegment = trainingConfig.segments[0];
+                    trainingConfig.currentBpm = trainingConfig.currentSegment.bpm;
+                } else {
+                    // 如果没有分段，使用默认值
+                    trainingConfig.currentSegment = { bpm: 60, beatsPerBar: 4, bars: 4, totalBeats: 16 };
+                    trainingConfig.currentBpm = 60;
+                }
+                trainingConfig.loopSegments = loopSegmentsCheckbox?.checked || false;
+                trainingConfig.segmentBarsCompleted = 0;
+            } else if (trainingModeType === 'random') {
+                // 随机变速模式配置
+                trainingConfig.baseBpm = parseInt(baseBpmInput?.value || 120);
+                trainingConfig.randomRange = parseInt(randomRangeInput?.value || 10);
+                trainingConfig.randomChangeInterval = parseInt(randomChangeIntervalInput?.value || 4);
+                trainingConfig.currentBpm = trainingConfig.baseBpm;
+                trainingConfig.currentIntervalBars = 0;
+                trainingConfig.currentRandomFactor = 1;
+            } else if (trainingModeType === 'rhythm') {
+                // 节奏控制模式配置
+                trainingConfig.baseBpm = parseInt(rhythmBaseBpmInput?.value || 120);
+                trainingConfig.muteProbability = parseInt(muteProbabilityInput?.value || 50);
+                // 移除了节奏控制的每小节拍数配置
+                trainingConfig.currentBpm = trainingConfig.baseBpm;
+                trainingConfig.muteCurrentBar = false; // 标记当前小节是否静音
+            }
+            
+            // 更新UI显示
+            if (trainingBpmValue) trainingBpmValue.textContent = trainingConfig.currentBpm;
+            if (barsCompletedElement) barsCompletedElement.textContent = trainingConfig.barsCompleted;
+            if (barsUntilChangeElement) {
+                barsUntilChangeElement.textContent = trainingModeType === 'progressive' ? 
+                    (trainingConfig.barsPerChange || 4) : 
+                    (trainingConfig.currentSegment?.bars || 4);
+            }
+            
+            // 更新分段信息显示
+            if (segmentInfo) {
+                segmentInfo.style.display = trainingModeType === 'segmented' ? 'block' : 'none';
+            }
+            if (currentSegmentElement && totalSegmentsElement && trainingModeType === 'segmented') {
+                currentSegmentElement.textContent = '1';
+                totalSegmentsElement.textContent = trainingConfig.segments.length;
+            }
+        }
+        
+        // 更新训练状态显示
+        function updateTrainingStatus() {
+            if (trainingBpmValue) trainingBpmValue.textContent = trainingConfig.currentBpm;
+            if (barsCompletedElement) barsCompletedElement.textContent = trainingModeType === 'segmented' ? 
+                (trainingConfig.segmentBarsCompleted || 0) : (trainingConfig.currentIntervalBars || trainingConfig.barsCompleted || 0);
+            if (barsUntilChangeElement) {
+                if (trainingModeType === 'progressive') {
+                    barsUntilChangeElement.textContent = trainingConfig.barsPerChange || 4;
+                } else if (trainingModeType === 'random') {
+                    barsUntilChangeElement.textContent = (trainingConfig.randomChangeInterval || 4) - (trainingConfig.currentIntervalBars || 0);
+                } else {
+                    barsUntilChangeElement.textContent = trainingConfig.currentSegment?.bars || 4;
+                }
+            }
+            
+            // 更新训练状态文本
+            if (trainingStatusText) {
+                if (isTrainingMode) {
+                    if (trainingModeType === 'random') {
+                        const changePercent = trainingConfig.currentRandomFactor ? Math.round((trainingConfig.currentRandomFactor - 1) * 100) : 0;
+                        trainingStatusText.textContent = `随机变速模式 - 基础BPM: ${trainingConfig.baseBpm}, 当前变化: ${changePercent > 0 ? '+' : ''}${changePercent}%`;
+                        trainingStatusText.style.color = '#e67e22'; // 橙色
+                    } else if (trainingModeType === 'rhythm') {
+                        trainingStatusText.textContent = `节奏控制 - 基础BPM: ${trainingConfig.baseBpm}, 静音概率: ${trainingConfig.muteProbability}%`;
+                        trainingStatusText.style.color = '#9b59b6'; // 紫色
+                    } else if (trainingModeType === 'segmented') {
+                        trainingStatusText.textContent = `分段训练中 - 分段 ${(trainingConfig.currentSegmentIndex || 0) + 1}/${(trainingConfig.segments || []).length}`;
+                        trainingStatusText.style.color = '#3498db'; // 蓝色
+                    } else {
+                        trainingStatusText.textContent = `变速模式 - ${trainingConfig.isIncreasing ? '加速' : '减速'}训练`;
+                        trainingStatusText.style.color = '#2ecc71'; // 绿色
+                    }
+                } else {
+                    trainingStatusText.textContent = '就绪';
+                    trainingStatusText.style.color = '#27ae60'; // 绿色
+                }
+            }
+            
+            // 更新分段信息
+            if (segmentInfo) {
+                segmentInfo.style.display = trainingModeType === 'segmented' ? 'block' : 'none';
+            }
+            if (currentSegmentElement && totalSegmentsElement && trainingModeType === 'segmented') {
+                currentSegmentElement.textContent = (trainingConfig.currentSegmentIndex || 0) + 1;
+                totalSegmentsElement.textContent = (trainingConfig.segments || []).length;
+            }
+        }
+        
+        // 分段训练的小节完成处理
+        function handleSegmentBarComplete() {
+            trainingConfig.segmentBarsCompleted = (trainingConfig.segmentBarsCompleted || 0) + 1;
+            
+            log(`分段 ${trainingConfig.currentSegmentIndex + 1} 完成小节: ${trainingConfig.segmentBarsCompleted}/${trainingConfig.currentSegment.bars}`);
+            
+            // 检查当前分段是否完成
+            if (trainingConfig.segmentBarsCompleted >= trainingConfig.currentSegment.bars) {
+                // 移动到下一个分段
+                trainingConfig.currentSegmentIndex++;
+                
+                // 检查是否完成所有分段
+                if (trainingConfig.currentSegmentIndex >= trainingConfig.segments.length) {
+                    if (trainingConfig.loopSegments) {
+                        // 循环播放，回到第一个分段
+                        trainingConfig.currentSegmentIndex = 0;
+                        log('循环播放: 回到第一个分段');
+                    } else {
+                        // 停止训练
+                        isTrainingMode = false;
+                        if (trainingStatusText) {
+                            trainingStatusText.textContent = '已完成所有分段';
+                            trainingStatusText.style.color = '#27ae60';
+                        }
+                        if (toggleTrainingBtn) {
+                            toggleTrainingBtn.textContent = '开始训练';
+                            toggleTrainingBtn.classList.add('start');
+                            toggleTrainingBtn.classList.remove('stop');
+                        }
+                        log('训练完成: 已完成所有分段');
+                        return;
+                    }
+                }
+                
+                // 更新当前分段
+                trainingConfig.currentSegment = trainingConfig.segments[trainingConfig.currentSegmentIndex];
+                trainingConfig.segmentBarsCompleted = 0;
+                
+                // 设置下一小节的BPM（将在下一小节第一拍时应用）
+                trainingConfig.nextBpm = trainingConfig.currentSegment.bpm;
+                
+                // 如果拍数发生变化，需要在下一小节开始时更新
+                if (currentNumerator !== trainingConfig.currentSegment.beatsPerBar) {
+                    trainingConfig.nextBeatsPerBar = trainingConfig.currentSegment.beatsPerBar;
+                }
+                
+                log(`准备切换到分段 ${trainingConfig.currentSegmentIndex + 1}，BPM: ${trainingConfig.currentSegment.bpm}，拍数: ${trainingConfig.currentSegment.beatsPerBar}`);
+            }
+            
+            updateTrainingStatus();
+        }
+        
+        // 验证分段训练输入
+        function validateSegmentTraining() {
+            const segmentsCount = parseInt(segmentsCountInput?.value) || 0;
+            if (segmentsCount < 2 || segmentsCount > 8) {
+                alert('分段数量必须在2-8之间');
+                return false;
+            }
+            
+            // 使用硬编码的值，与配置文件保持一致
+            const minBPM = 40;
+            const maxBPM = 300;
+            
+            const segmentConfigs = document.querySelectorAll('.segment-config');
+            for (let i = 0; i < segmentConfigs.length; i++) {
+                const bpm = parseInt(segmentConfigs[i].querySelector('.segment-bpm').value) || 0;
+                const beats = parseInt(segmentConfigs[i].querySelector('.segment-beats').value) || 0;
+                const bars = parseInt(segmentConfigs[i].querySelector('.segment-bars').value) || 0;
+                
+                if (bpm < minBPM || bpm > maxBPM) {
+                    alert(`分段 ${i + 1} 的BPM值必须在${minBPM}-${maxBPM}之间`);
+                    return false;
+                }
+                if (beats < 1 || beats > 16) {
+                    alert(`分段 ${i + 1} 的拍数必须在1-16之间`);
+                    return false;
+                }
+                if (bars < 1 || bars > 32) {
+                    alert(`分段 ${i + 1} 的小节数必须在1-32之间`);
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // 整合的训练模式切换按钮
+        if (toggleTrainingBtn) {
+            toggleTrainingBtn.addEventListener('click', () => {
+                if (!isTrainingMode) {
+                    // 开始训练逻辑
+                    // 获取当前激活的标签
+                    const activeTab = document.querySelector('.tab-btn.active');
+                    if (activeTab) {
+                        trainingModeType = activeTab.getAttribute('data-tab');
+                    }
+                    
+                    // 根据训练模式类型进行验证
+                    if (trainingModeType === 'progressive') {
+                        // 验证变速模式输入
+                        const minBPM = 40;
+                        const maxBPM = 300;
+                        const initialBpm = parseInt(initialBpmInput?.value || 0);
+                        const targetBpm = parseInt(targetBpmInput?.value || 0);
+                        const barsPerChange = parseInt(barsPerChangeInput?.value || 0);
+                        const bpmChangeStep = parseInt(bpmChangeStepInput?.value || 0);
+                        
+                        if (initialBpm < minBPM || initialBpm > maxBPM || targetBpm < minBPM || targetBpm > maxBPM) {
+                            alert(`BPM值必须在${minBPM}-${maxBPM}之间`);
+                            return;
+                        }
+                        
+                        if (barsPerChange < 1 || barsPerChange > 16) {
+                            alert('小节数必须在1-16之间');
+                            return;
+                        }
+                        
+                        if (bpmChangeStep < 1 || bpmChangeStep > 10) {
+                            alert('变化量必须在1-10之间');
+                            return;
+                        }
+                        
+                        if (initialBpm === targetBpm) {
+                            alert('初始速度和目标速度不能相同');
+                            return;
+                        }
+                    } else if (trainingModeType === 'segmented') {
+                        // 验证分段训练输入
+                        if (!validateSegmentTraining()) {
+                            return;
+                        }
+                    } else if (trainingModeType === 'random') {
+                        // 验证随机变速模式输入
+                        const minBPM = 40;
+                        const maxBPM = 300;
+                        const baseBpm = parseInt(baseBpmInput?.value || 0);
+                        const randomRange = parseInt(randomRangeInput?.value || 0);
+                        const randomChangeInterval = parseInt(randomChangeIntervalInput?.value || 0);
+                        
+                        if (baseBpm < minBPM || baseBpm > maxBPM) {
+                            alert(`基础BPM值必须在${minBPM}-${maxBPM}之间`);
+                            return;
+                        }
+                        
+                        if (randomChangeInterval < 1 || randomChangeInterval > 16) {
+                            alert('随机变化间隔必须在1-16小节之间');
+                            return;
+                        }
+                    } else if (trainingModeType === 'rhythm') {
+                        // 验证节奏控制模式输入
+                        const minBPM = 40;
+                        const maxBPM = 300;
+                        const rhythmBaseBpm = parseInt(rhythmBaseBpmInput?.value || 0);
+                        const muteProbability = parseInt(muteProbabilityInput?.value || 0);
+                        // 移除了节奏控制的每小节拍数引用
+                        
+                        if (rhythmBaseBpm < minBPM || rhythmBaseBpm > maxBPM) {
+                            alert(`基础BPM值必须在${minBPM}-${maxBPM}之间`);
+                            return;
+                        }
+                        
+                        if (muteProbability < 5 || muteProbability > 95) {
+                            alert('静音概率必须在5%-95%之间');
+                            return;
+                        }
+                        
+                        // 移除了对每小节拍数的验证，因为已不再使用
+                    }
+                    
+                    // 初始化训练配置
+                    initializeTrainingConfig();
+                    isTrainingMode = true;
+                    
+                    // 更新按钮状态
+                    toggleTrainingBtn.textContent = '停止训练';
+                    toggleTrainingBtn.classList.remove('start');
+                    toggleTrainingBtn.classList.add('stop');
+                    
+                    // 关闭模态窗口
+                    if (trainingModal) trainingModal.style.display = 'none';
+                    
+                    // 设置初始BPM和拍数
+                    if (bpmSliderElement) {
+                        bpmSliderElement.value = trainingConfig.currentBpm;
+                        updateBPMDisplay(trainingConfig.currentBpm);
+                    }
+                    
+                    // 更新拍数设置（仅在分段训练模式下）
+                    if (trainingModeType === 'segmented' && trainingConfig.currentSegment) {
+                        setBeatsPerBar(trainingConfig.currentSegment.beatsPerBar);
+                    }
+                    
+                    // 获取预备拍设置
+                    const countdownBeats = parseInt(document.getElementById('countdown-beats')?.value || 0);
+                    
+                    // 获取当前训练模式的初始BPM
+                    let initialBpm = trainingConfig.currentBpm || 60;
+                    
+                    // 处理预备拍功能
+                    if (countdownBeats > 0) {
+                        // 显示全屏倒数覆盖层
+                        const countdownOverlay = document.getElementById('countdown-overlay');
+                        const countdownNumber = document.getElementById('countdown-number');
+                        if (countdownOverlay && countdownNumber) {
+                            countdownOverlay.style.display = 'flex';
+                            
+                            // 计算每拍的时间（毫秒）
+                            const beatDuration = (60 / initialBpm) * 1000;
+                            
+                            let currentCount = countdownBeats;
+                            countdownNumber.textContent = currentCount;
+                            
+                            // 播放预备拍声音和更新显示
+                            function playCountdown() {
+                                if (currentCount > 0) {
+                                    // 播放预备拍声音 - 使用节拍器的常规点击声音
+                                    // 注意：这里假设playSound函数在index.html中可以访问
+                                    // 如果不可用，可以尝试使用简单的音频元素或其他方式
+                                    try {
+                                        playSound({
+                                            type: 'regularBeat',
+                                            volume: 0.8 // 使用80%的音量
+                                        });
+                                    } catch (error) {
+                                        // 如果playSound不可用，可以使用简单的方法或忽略
+                                        console.log('播放预备拍声音:', currentCount);
+                                    }
+                                    
+                                    // 更新显示的数字
+                                    countdownNumber.textContent = currentCount;
+                                    
+                                    // 减少计数
+                                    currentCount--;
+                                    
+                                    // 在下一拍继续计数
+                                    setTimeout(playCountdown, beatDuration);
+                                } else {
+                                    // 倒数完成，隐藏覆盖层并开始训练
+                                    countdownOverlay.style.display = 'none';
+                                    startTraining();
+                                }
+                            }
+                            
+                            // 开始倒数
+                            playCountdown();
+                        }
+                    } else {
+                        // 不需要预备拍，直接开始训练
+                        startTraining();
+                    }
+                    
+                    // 实际开始训练的函数
+                    function startTraining() {
+                        // 如果节拍器未运行，则启动它
+                        if (!isRunning) {
+                            startMetronome();
+                        } else {
+                            // 如果已经在运行，重置节拍位置
+                            currentBeatPosition = 1;
+                        }
+                    }
+                    
+                    updateTrainingStatus();
+                    
+                    // 记录不同模式的日志
+                    if (trainingModeType === 'segmented') {
+                        log('分段训练开始: 共', trainingConfig.segments.length, '个分段', 
+                            '循环播放:', trainingConfig.loopSegments ? '是' : '否');
+                    } else {
+                        log('训练开始: 初始BPM', trainingConfig.initialBpm, '目标BPM', 
+                            trainingConfig.targetBpm, '每', trainingConfig.barsPerChange, 
+                            '小节变化', trainingConfig.bpmChangeStep, 'BPM');
+                    }
+                } else {
+                    // 停止训练逻辑
+                    isTrainingMode = false;
+                    
+                    // 停止节拍器
+                    stopMetronome();
+                    
+                    // 更新按钮状态
+                    toggleTrainingBtn.textContent = '开始训练';
+                    toggleTrainingBtn.classList.remove('stop');
+                    toggleTrainingBtn.classList.add('start');
+                    
+                    updateTrainingStatus();
+                    log('训练停止');
+                }
+            });
+        }
+        
+        // 在小节完成时调用的函数 - 用于检测是否需要改变BPM
+        function onBarComplete() {
+            if (!isTrainingMode) return;
+            
+            updateTrainingStatus();
+            
+            if (trainingModeType === 'rhythm') {
+                // 节奏控制模式的逻辑 - 决定下一小节是否静音
+                const randomValue = Math.random() * 100;
+                trainingConfig.muteCurrentBar = randomValue < trainingConfig.muteProbability;
+                
+                if (trainingConfig.muteCurrentBar) {
+                    log('下一小节将静音');
+                }
+            } else if (trainingModeType === 'random') {
+                // 随机变速模式的逻辑
+                trainingConfig.currentIntervalBars = (trainingConfig.currentIntervalBars || 0) + 1;
+                
+                // 检查是否需要在随机小节中变化BPM
+                if (trainingConfig.currentIntervalBars >= trainingConfig.randomChangeInterval) {
+                    // 生成随机变化因子（±randomRange%）
+                    const randomFactor = 1 + (Math.random() - 0.5) * 2 * (trainingConfig.randomRange / 100);
+                    trainingConfig.currentRandomFactor = randomFactor;
+                    
+                    // 计算新的BPM值并四舍五入到整数
+                    const newBpm = Math.round(trainingConfig.baseBpm * randomFactor);
+                    
+                    // 确保BPM在有效范围内
+                    const minBpm = 40;
+                    const maxBpm = 300;
+                    const clampedBpm = Math.max(minBpm, Math.min(maxBpm, newBpm));
+                    
+                    // 设置新的BPM
+                    if (clampedBpm !== trainingConfig.currentBpm) {
+                        trainingConfig.nextBpm = clampedBpm;
+                        log('下一小节将使用随机BPM:', clampedBpm, '(' + Math.round((randomFactor - 1) * 100) + '%)');
+                    }
+                    
+                    // 重置间隔计数
+                    trainingConfig.currentIntervalBars = 0;
+                }
+            } else if (trainingModeType === 'progressive') {
+                // 变速模式的逻辑
+                trainingConfig.barsCompleted++;
+                
+                // 检查是否需要改变BPM
+                if (trainingConfig.barsCompleted >= trainingConfig.barsPerChange) {
+                    let newBpm = trainingConfig.currentBpm;
+                    let shouldStop = false;
+                    
+                    if (trainingConfig.isIncreasing) {
+                        newBpm += trainingConfig.bpmChangeStep;
+                        // 检查是否达到或超过目标速度
+                        if (newBpm >= trainingConfig.targetBpm) {
+                            newBpm = trainingConfig.targetBpm;
+                            shouldStop = true; // 标记应该停止，但先播放目标速度
+                        }
+                    } else {
+                        newBpm -= trainingConfig.bpmChangeStep;
+                        // 检查是否达到或低于目标速度
+                        if (newBpm <= trainingConfig.targetBpm) {
+                            newBpm = trainingConfig.targetBpm;
+                            shouldStop = true; // 标记应该停止，但先播放目标速度
+                        }
+                    }
+                    
+                    // 设置下一小节将使用的新BPM
+                    if (newBpm !== trainingConfig.currentBpm) {
+                        trainingConfig.nextBpm = newBpm;
+                        log('下一小节将使用新BPM:', newBpm);
+                        
+                        // 如果这是最后一次变化，设置标记
+                        if (shouldStop) {
+                            trainingConfig.shouldStopAfterNextChange = true;
+                            log('将在播放目标速度', newBpm, 'BPM 后停止训练');
+                        }
+                    }
+                    
+                    // 重置小节计数
+                    trainingConfig.barsCompleted = 0;
+                }
+                
+                // 检查是否应该在当前小节结束后停止（已经播放了目标速度）
+                if (trainingConfig.shouldStopAfterNextChange && 
+                    trainingConfig.currentBpm === trainingConfig.targetBpm) {
+                    isTrainingMode = false;
+                    if (trainingStatusText) {
+                        trainingStatusText.textContent = '已达到目标速度';
+                        trainingStatusText.style.color = '#27ae60';
+                    }
+                    if (toggleTrainingBtn) {
+                        toggleTrainingBtn.textContent = '开始训练';
+                        toggleTrainingBtn.classList.add('start');
+                        toggleTrainingBtn.classList.remove('stop');
+                    }
+                    trainingConfig.shouldStopAfterNextChange = false;
+                    log('训练完成: 已达到并播放目标速度', trainingConfig.currentBpm, 'BPM');
+                }
+            } else if (trainingModeType === 'segmented') {
+                // 分段训练的逻辑
+                handleSegmentBarComplete();
+            }
+        }
+        
+        // 为训练按钮设置键盘快捷键
+        if (trainingBtn) {
+            trainingBtn.setAttribute('aria-keyshortcuts', 'L');
+            trainingBtn.setAttribute('title', '训练模式 (L键)');
+        }
+        
+        // 为训练模式切换设置键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            // 避免在输入框中触发快捷键
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            // E键切换训练模式
+            if (e.key.toLowerCase() === 'e') {
+                // 阻止默认行为
+                e.preventDefault();
+                
+                // 忽略长按重复触发
+                if (e.repeat) {
+                    console.log('🔄 [training-shortcut] 忽略重复事件');
+                    return;
+                }
+                
+                // 🔥 使用本地事件锁防止重复触发
+                if (!tryLocalLock()) {
+                    return;
+                }
+                
+                console.log('✅ [training-shortcut] 执行训练模式切换');
+                // 触发训练模式切换
+                if (toggleTrainingBtn && toggleTrainingBtn instanceof HTMLElement) {
+                    toggleTrainingBtn.click();
+                }
+            }
+        });
+        
+        // 添加L键快捷键
+        document.addEventListener('keydown', (e) => {
+            // 确保不在输入框中时响应快捷键
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            if (e.key.toUpperCase() === 'L' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                e.preventDefault();
+                if (trainingModal) {
+                    trainingModal.style.display = trainingModal.style.display === 'block' ? 'none' : 'block';
+                }
+            }
+        });
+        
+        // 修改scheduler函数，在每小节结束时调用onBarComplete
+        // 首先，需要找到并修改原来的scheduler函数
+        // 这里我们需要确保在每小节的最后一拍完成后调用onBarComplete
+        // 由于我们无法直接修改现有函数，我们将通过扩展现有功能来实现
+        
+        /* 添加分段训练相关的CSS样式 */
+        const trainingStyle = document.createElement('style');
+        trainingStyle.textContent = `
+            .training-mode-tabs {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .tab-buttons {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+            
+            .tab-btn {
+                padding: 8px 16px;
+                background-color: #f0f0f0;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            
+            .tab-btn.active {
+                background-color: #3498db;
+                color: white;
+                border-color: #3498db;
+            }
+            
+            .tab-content {
+                display: none;
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            
+            .tab-content.active {
+                display: block;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .segments-container {
+                max-height: 300px;
+                overflow-y: auto;
+                border: 1px solid #eee;
+                border-radius: 4px;
+                padding: 10px;
+                margin: 10px 0;
+            }
+            
+            .segment-config {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 12px;
+                margin-bottom: 10px;
+                background-color: #f9f9f9;
+                position: relative;
+            }
+            
+            .segment-config h4 {
+                margin-top: 0;
+                margin-bottom: 10px;
+                color: #2c3e50;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            
+            .segment-config .training-control-group {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+                gap: 10px;
+            }
+            
+            .segment-config .training-control-group:last-child {
+                margin-bottom: 0;
+            }
+            
+            .segment-config .training-control-group label {
+                flex: 0 0 80px;
+                font-size: 13px;
+                color: #555;
+            }
+            
+            .segment-config .training-control-group input {
+                flex: 1;
+                padding: 4px 8px;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+                font-size: 14px;
+            }
+            
+            /* 美化滚动条 */
+            .segments-container::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            .segments-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 3px;
+            }
+            
+            .segments-container::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 3px;
+            }
+            
+            .segments-container::-webkit-scrollbar-thumb:hover {
+                background: #999;
+            }
+            
+            /* 小屏幕设备 (< 480px) - 移动优先基础样式 */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px 0;
+            }
+            
+            .container {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: clamp(20px, 6vw, 28px);
+            }
+            
+            p {
+                font-size: clamp(14px, 4vw, 16px);
+            }
+            
+            /* 按钮调整 */
+            button {
+                min-width: 90px;
+                min-height: 90px;
+                margin-bottom: 10px;
+            }
+            
+            .bpm-buttons-container {
+                gap: 60px;
+            }
+            
+            /* 训练控制布局 */
+            .training-controls-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .countdown-control {
+                justify-content: center;
+            }
+            
+            /* 增大滑块控件 */
+            input[type="range"] {
+                height: 8px;
+            }
+            
+            input[type="range"]::-webkit-slider-thumb {
+                width: 24px;
+                height: 24px;
+            }
+            
+            input[type="range"]::-moz-range-thumb {
+                width: 24px;
+                height: 24px;
+            }
+            
+            /* 节拍指示器调整 */
+            .indicator-dots {
+                gap: 8px;
+            }
+        }
+        
+        /* 中等屏幕设备 (481px - 768px) */
+        @media (min-width: 481px) {
+            .container {
+                max-width: 600px;
+                padding: 30px;
+            }
+            
+            #bpm-value {
+                font-size: 80px;
+            }
+            
+            .controls {
+                display: block;
+            }
+            
+            .main-controls {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+        
+        /* 大屏幕设备 (769px - 1024px) */
+        @media (min-width: 769px) {
+            .container {
+                max-width: 800px;
+                padding: 40px;
+            }
+            
+            #bpm-value {
+                font-size: 96px;
+            }
+            
+            .main-controls {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                gap: 30px;
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+            
+            .control-column {
+                flex: 1;
+                min-width: 250px;
+            }
+        }
+        
+        /* 超大屏幕设备 (> 1024px) */
+        @media (min-width: 1025px) {
+            .container {
+                max-width: 900px;
+            }
+        }
+        
+        /* 模态窗口响应式调整 */
+        @media (max-width: 600px) {
+            .modal-content {
+                width: 90%;
+                margin: 15% auto;
+                padding: 15px;
+            }
+            
+            /* 训练标签页响应式 */
+            .tab-buttons {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                text-align: center;
+            }
+            
+            .segment-config .training-control-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .segment-config .training-control-group label {
+                flex: none;
+            }
+            
+            .segment-config .training-control-group input {
+                width: 100%;
+            }
+        }
+        `;
+        document.head.appendChild(trainingStyle);
+    </script>
+    
+    <!-- 加载模块化应用入口 -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>
